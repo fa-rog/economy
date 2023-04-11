@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<link href="assets/img/icon.png" rel="icon" type="image/png">
+<link href="style.css" rel="stylesheet">
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script defer src="assets/js/territory.js" type="module"></script>
+<script defer src="assets/js/tooltips.js" type="module"></script>
+<script defer src="assets/js/main.js" type="module"></script>
+<title>Economy</title>
+<aside>
+  <br>
+  <h3>Territories</h3>
+  <hr>
+  <div class="selection-wrapper">
+    <label for="loadTerritories"></label>
+    <input id="loadTerritories" placeholder="Add from guild" type="text">
+    <ul id="loadTerritoriesResults"></ul>
+  </div>
+  <div class="selection-wrapper">
+    <label for="addTerritory"></label>
+    <input id="addTerritory" placeholder="Add territory" type="text">
+    <ul id="addTerritoryResults"></ul>
+  </div>
+  <button disabled id="editTerrs">Edit selected</button>
+  <button disabled id="resetTerrs">Reset selected</button>
+  <button disabled id="removeTerrs">Remove selected</button>
+  <br>
+  <h3>General</h3>
+  <hr>
+  <button id="tributes">Tributes</button>
+  <button disabled id="setHq">Set HQ</button>
+  <br>
+  <h3>Selection <span data-value="selection"></span></h3>
+  <hr>
+  <button id="selectAll">Select all</button>
+  <button id="selectNone">Select none</button>
+  <br>
+  <h3>Treasury</h3>
+  <hr>
+  <button id="loadTreasury">Load from Wynn</button>
+  <div class="selection-wrapper">
+    <button class="treasury" id="globalTreasury">Set globally</button>
+    <ul class="treasury" id="globalTreasuryOptions">
+      <li class="bg-red" data-value="0">Very Low
+      <li class="bg-gold" data-value="0.1">Low
+      <li class="bg-yellow" data-value="0.2">Medium
+      <li class="bg-green" data-value="0.25">High
+      <li class="bg-aqua" data-value="0.3">Very High
+    </ul>
+  </div>
+  <div class="selection-wrapper">
+    <button disabled id="selectedTreasury">Set for selected</button>
+    <ul class="treasury" id="selectedTreasuryOptions">
+      <li class="bg-red" data-value="0">Very Low
+      <li class="bg-gold" data-value="0.1">Low
+      <li class="bg-yellow" data-value="0.2">Medium
+      <li class="bg-green" data-value="0.25">High
+      <li class="bg-aqua" data-value="0.3">Very High
+    </ul>
+  </div>
+  <br>
+  <hr>
+  <footer>
+    <span>Info & Credits</span>
+  </footer>
+</aside>
+<main></main>
+<div class="modal-wrapper modal-edit">
+  <div class="modal">
+    <section>
+      <span class="close">&times;</span>
+      <h2>Upgrades and Bonuses for selected territories <span data-value="selection"></span></h2>
+    </section>
+    <section class="upgrades">
+      <ul>
+        <li><img alt="Damage" src="assets/img/upgrades/damage.png"><span>0</span>
+        <li><img alt="Attack" src="assets/img/upgrades/attack.png"><span>0</span>
+        <li><img alt="Health" src="assets/img/upgrades/health.png"><span>0</span>
+        <li><img alt="Defence" src="assets/img/upgrades/defence.png"><span>0</span>
+      </ul>
+      <ul>
+        <li><img alt="Stronger Minions" src="assets/img/upgrades/minions.png"><span>0</span>
+        <li><img alt="Tower Multi-Attacks" src="assets/img/upgrades/multi.png"><span>0</span>
+        <li><img alt="Tower Aura" src="assets/img/upgrades/aura.png"><span>0</span>
+        <li><img alt="Tower Volley" src="assets/img/upgrades/volley.png"><span>0</span>
+      </ul>
+      <ul>
+        <li><img alt="Gathering Experience" src="assets/img/upgrades/gathering_xp.png"><span>0</span>
+        <li><img alt="Mob Experience" src="assets/img/upgrades/mob_xp.png"><span>0</span>
+        <li><img alt="Mob Damage" src="assets/img/upgrades/mob_damage.png"><span>0</span>
+        <li><img alt="PvP Damage" src="assets/img/upgrades/pvp_damage.png"><span>0</span>
+        <li><img alt="XP Seeking" src="assets/img/upgrades/xp_seeking.png"><span>0</span>
+        <li><img alt="Tome Seeking" src="assets/img/upgrades/tome_seeking.png"><span>0</span>
+        <li><img alt="Emerald Seeking" src="assets/img/upgrades/emerald_seeking.png"><span>0</span>
+      </ul>
+      <ul>
+        <li><img alt="Larger Resource Storage" src="assets/img/upgrades/resource_storage.png"><span>0</span>
+        <li><img alt="Larger Emerald Storage" src="assets/img/upgrades/emerald_storage.png"><span>0</span>
+        <li><img alt="Efficient Resources" src="assets/img/upgrades/efficient_resources.png"><span>0</span>
+        <li><img alt="Efficient Emeralds" src="assets/img/upgrades/efficient_emeralds.png"><span>0</span>
+        <li><img alt="Resource Rate" src="assets/img/upgrades/resource_rate.png"><span>0</span>
+        <li><img alt="Emerald Rate" src="assets/img/upgrades/emerald_rate.png"><span>0</span>
+      </ul>
+    </section>
+    <section>
+      <p>Left- or right-click a slot to change the upgrade on the selected territories. Hold shift for larger steps.
+      <p>If you have selected territories with different upgrade values, the lowest respective value is displayed here;
+        <br>the same upgrade value is set for all selected territories as soon as you increase or decrease it.
+    </section>
+  </div>
+</div>
+<div class="modal-wrapper modal-tributes">
+  <div class="modal">
+    <section>
+      <span class="close">&times;</span>
+      <h2>Total Tributes</h2>
+    </section>
+    <section class="tributes">
+      <div><label for="emeraldsTributes">Emeralds: </label><input id="emeraldsTributes" type="number"></div>
+      <div><label for="oreTributes">Ore: </label><input id="oreTributes" type="number"></div>
+      <div><label for="woodTributes">Wood: </label><input id="woodTributes" type="number"></div>
+      <div><label for="fishTributes">Fish: </label><input id="fishTributes" type="number"></div>
+      <div><label for="cropsTributes">Crops: </label><input id="cropsTributes" type="number"></div>
+    </section>
+    <section>
+      <p>Use negative numbers for resources you give out, and positive numbers for resources you receive.
+      <p>Tributes will be applied once you leave this window.
+    </section>
+  </div>
+</div>
+<div class="modal-wrapper modal-credit">
+  <div class="modal">
+    <section>
+      <span class="close">&times;</span>
+      <h2>Wynncraft Economy Simulator</h2>
+    </section>
+    <section>
+      <p>This website allows you to upgrade and edit territories just like you would in Wynncraft.
+      <p>Made by farog, feel free to contact me on Discord (farog#8881) if you notice a bug or have feature requests.
+        <br><br>
+      <h3>Additional Credits:</h3>
+      <ul>
+        <li><a href="https://aviciaguild.github.io/resource-updater/" target="_blank">Avicia's Resource Updater</a>
+          (newracket): General inspiration and design of territory upgrade menu
+        <li><a href="https://wynncraft.com" target="_blank">Wynncraft</a>: The game itself (obviously) and its API
+        <li><a href="https://wynndata.tk" target="_blank">Wynndata</a> (dukioooo): Territory box design
+      </ul>
+    </section>
+  </div>
+</div>

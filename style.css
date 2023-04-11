@@ -1,0 +1,389 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #9d896e;
+  font-family: Nunito, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+}
+
+/* Minecraft colors */
+
+.dark-red {
+  color: #a00;
+}
+
+.gold {
+  color: #fa0;
+}
+
+.gray {
+  color: #aaa;
+}
+
+.dark-gray {
+  color: #555;
+}
+
+.green {
+  color: #5f5;
+}
+
+.aqua {
+  color: #5ff;
+}
+
+.red {
+  color: #f55;
+}
+
+.light-purple {
+  color: #f5f;
+}
+
+.yellow {
+  color: #ff5;
+}
+
+.white {
+  color: white;
+}
+
+.bg-gold {
+  background-color: #fa0;
+}
+
+.bg-green {
+  background-color: #5f5;
+}
+
+.bg-aqua {
+  background-color: #5ff;
+}
+
+.bg-red {
+  background-color: #f55;
+}
+
+.bg-yellow {
+  background-color: #ff5;
+}
+
+/* Sidebar */
+
+aside {
+  background-color: #816f57;
+  bottom: 0;
+  box-sizing: border-box;
+  left: 0;
+  overflow-y: auto;
+  padding: 10px;
+  position: fixed;
+  top: 0;
+  user-select: none;
+  width: 15%;
+}
+
+aside hr {
+  border: none;
+  border-top: 1px dashed #1d1905;
+  margin-bottom: 8px;
+}
+
+aside h3 {
+  color: #fffacd;
+  margin: 0 15px;
+}
+
+aside button,
+aside input {
+  background-color: #67917f;
+  border: none;
+  border-radius: 5px;
+  box-sizing: border-box;
+  color: #1d1905;
+  cursor: pointer;
+  display: block;
+  font-size: 1rem;
+  margin: 5px auto;
+  outline: none;
+  padding: 6px 10px;
+  text-align: center;
+  transition: background-color 0.1s;
+  width: 90%;
+}
+
+aside input:focus:hover {
+  cursor: text;
+}
+
+aside .selection-wrapper {
+  position: relative;
+}
+
+aside ul {
+  background-color: white;
+  border: 1px solid #1d1905;
+  border-radius: 10px;
+  box-sizing: border-box;
+  display: none;
+  left: 10%;
+  list-style-type: none;
+  margin: -3px 0 0;
+  padding: 5px;
+  position: absolute;
+  width: 80%;
+  z-index: 1;
+}
+
+aside ul:hover {
+  cursor: pointer;
+}
+
+aside .active + ul {
+  display: block;
+}
+
+aside li,
+aside ul span {
+  background-color: white;
+  font-size: 0.8rem;
+  padding: 2px 5px;
+  transition: background-color 0.1s ease;
+}
+
+aside li:hover {
+  font-weight: 700;
+}
+
+aside .treasury li {
+  text-align: center;
+}
+
+aside ul:not(.treasury) li:hover {
+  background-color: #ddd;
+}
+
+aside button:hover:not(:disabled),
+aside input:hover:not(:focus):not(:disabled) {
+  background-color: #ccc;
+}
+
+aside :disabled {
+  color: #1d1905;
+  cursor: not-allowed;
+}
+
+aside :disabled:not(.treasury) {
+  background-color: #77a18f;
+  opacity: 0.9;
+}
+
+aside .success,
+aside .success:hover,
+aside .success:disabled {
+  background-color: #8f8;
+}
+
+aside input:focus,
+aside input.active {
+  text-align: left;
+  user-select: text;
+}
+
+aside input::placeholder {
+  color: #1d1905;
+}
+
+aside input:focus::placeholder {
+  opacity: 0;
+}
+
+aside footer {
+  text-align: center;
+}
+
+aside footer span {
+  color: #fffacd;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Main content: territory list */
+
+main {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-left: 15%;
+  padding: 10px;
+  width: 85%;
+}
+
+main .tooltip {
+  background-color: black;
+  border: 2px solid black;
+  border-radius: 5px;
+  color: white;
+  display: inline-block;
+  line-height: 1.3;
+  margin: 10px;
+  outline: 2px solid #2c075f;
+  outline-offset: -4px;
+  padding: 10px;
+  user-select: none;
+  width: 240px;
+}
+
+main .tooltip:not(.total) {
+  cursor: pointer;
+}
+
+main .tooltip img {
+  vertical-align: middle;
+}
+
+main .selected {
+  background-color: #222;
+  border-color: #222;
+  opacity: 0.9;
+  outline-color: #4c277f;
+}
+
+/* Modal */
+
+.modal-wrapper {
+  background-color: #0008;
+  display: none;
+  height: 100%;
+  padding-top: 100px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+}
+
+.modal-wrapper.fade-in {
+  animation: 0.4s ease fade-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-wrapper.fade-out {
+  animation: 0.4s ease fade-out;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.modal {
+  background-color: #816f57;
+  box-shadow: 0 0 8px 4px #0004;
+  margin: 0 auto;
+  padding: 10px 20px;
+  text-align: center;
+  width: 60%;
+}
+
+.modal h2 {
+  padding: 10px 0;
+}
+
+.modal p {
+  margin: 10px 0;
+}
+
+.modal h3,
+.modal ul {
+  text-align: left;
+}
+
+.modal .close {
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.modal .close:focus,
+.modal .close:hover {
+  color: black;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.modal section {
+  padding: 2px 16px;
+}
+
+.modal .tributes,
+.modal .upgrades {
+  background-color: #c4ab79;
+  border-radius: 10px;
+  display: inline-block;
+  margin: 0 auto;
+  padding: 10px 10px 7px;
+  text-align: left;
+  user-select: none;
+}
+
+.modal .upgrades ul {
+  list-style: none;
+}
+
+.modal .upgrades li {
+  cursor: pointer;
+  display: inline-block;
+  height: 48px;
+  margin: 0 4px;
+  position: relative;
+  user-select: none;
+  width: 48px;
+}
+
+.modal .upgrades li:hover {
+  background-color: #e2d5bc;
+}
+
+.modal .upgrades li span {
+  color: white;
+  font-size: 20px;
+  position: absolute;
+  right: 0;
+  text-shadow: 1px 1px black;
+  top: 50%;
+}
+
+.modal .tributes input {
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  margin: 5px 15px;
+  outline: none;
+  padding: 6px 10px;
+}
+
+.modal .tributes label {
+  float: left;
+  padding-top: 8px;
+  text-align: right;
+  width: 80px;
+}
+
+.modal a, .modal a:visited {
+  color: #00e;
+  text-decoration: none;
+}
