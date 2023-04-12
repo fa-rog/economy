@@ -129,9 +129,9 @@ const openEditModal = createModal('.modal-edit', () => {
     const territory = territories[selected.getAttribute('data-name')];
     tooltips.updateTerritory(territory);
   }
-  clearSelection();
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  setTimeout(clearSelection, 100);
 });
 
 document.querySelector('#editTerrs').addEventListener('click', () => {
@@ -200,9 +200,9 @@ document.querySelector('#resetTerrs').addEventListener('click', () => {
     territory.update();
     tooltips.updateTerritory(territory);
   }
-  clearSelection();
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  clearSelection();
 });
 
 document.querySelector('#removeTerrs').addEventListener('click', () => {
@@ -313,10 +313,8 @@ function createTreasuryMenu(buttonTag, optionListTag, callback) {
     if (event.target.tagName.toLowerCase() === 'li') {
       callback(Number(event.target.getAttribute('data-value')));
       button.classList.add(event.target.className);
-      button.disabled = true;
       setTimeout(() => {
         button.classList.remove(event.target.className);
-        button.disabled = false;
       }, 700);
     }
   });
@@ -333,9 +331,9 @@ function setTreasury(items, value = null) {
 }
 
 document.addEventListener('click', event => {
-  for (const element of document.querySelectorAll('.treasury.active')) {
+  for (const element of document.querySelectorAll('.active')) {
     if (event.target !== element) {
-      element.className = 'treasury';
+      element.classList.remove('active');
     }
   }
 });
