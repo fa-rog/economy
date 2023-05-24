@@ -70,6 +70,10 @@ body {
   background-color: #ff5;
 }
 
+[hidden] {
+  display: none;
+}
+
 /* Sidebar */
 
 aside {

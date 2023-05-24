@@ -229,7 +229,7 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
     if (Object.keys(territories).length > 0) {
       setHq(Object.keys(territories)[0]);
     } else {
-      hq = null;
+      setHq(null);
     }
   }
   updateSelection();
@@ -250,6 +250,10 @@ document.querySelector('#setHq').addEventListener('click', () => {
 });
 
 function setHq(territoryName) {
+  if (territoryName == null) {
+    hq = null;
+    return;
+  }
   const oldHq = hq;
   hq = territoryName;
   updateHqDistances();
@@ -364,6 +368,61 @@ function updateSelection() {
   document.querySelector('#removeTerrs').disabled = amount === 0;
   document.querySelector('#setHq').disabled = amount !== 1;
   document.querySelector('#selectedTreasury').disabled = amount === 0;
+}
+
+document.querySelector('#export').addEventListener('click', () => {
+  const anchorElement = document.createElement('a');
+  anchorElement.download = 'Economy.json';
+  anchorElement.href = 'data:attachment/text,' + encodeURI(JSON.stringify(toJSON()));
+  anchorElement.click();
+});
+
+function toJSON() {
+  const exportObject = {hq: hq, territories: {}};
+  for (const territory of Object.values(territories)) {
+    exportObject.territories[territory.name] = {
+      treasury: Math.round((territory.treasuryBonus - 1) * 100) / 100,
+      upgrades: Object.entries(territory.upgrades).filter(([, value]) => value > 0)
+          .reduce((object, [name, value]) => ({...object, [name]: value}), {}),
+    };
+  }
+  return exportObject;
+}
+
+const fileInput = document.querySelector('#import-file');
+document.querySelector('#import').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    if (typeof reader.result === 'string') {
+      fromJSON(JSON.parse(reader.result));
+    }
+  });
+  reader.readAsText(fileInput.files[0]);
+  fileInput.value = null;
+}, false);
+
+function fromJSON(saveObject) {
+  for (const territoryName of Object.keys(territories)) {
+    delete territories[territoryName];
+    tooltips.removeTerritory(territoryName);
+    availableTerritories.push(territoryName);
+  }
+  setHq(null);
+  for (const [territoryName, territoryData] of Object.entries(saveObject.territories)) {
+    addTerritory(territoryName);
+    territories[territoryName].treasuryBonus = territoryData.treasury;
+    for (const [upgradeName, upgradeValue] of Object.entries(territoryData.upgrades)) {
+      territories[territoryName].upgrades[upgradeName] = upgradeValue;
+    }
+    territories[territoryName].update();
+  }
+  setHq(saveObject.hq);
+  for (const territory of Object.values(territories)) {
+    tooltips.updateTerritory(territory);
+  }
+  tooltips.sortTerritories();
+  tooltips.updateTotal(territories, tributes);
 }
 
 document.querySelector('aside footer span').addEventListener('click', createModal('.modal-credit'));
