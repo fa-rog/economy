@@ -3,6 +3,16 @@ import upgradeData from '../data/upgrades.json' assert {type: 'json'};
 import {Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 
+const shareUrl = 'https://script.google.com/macros/s/AKfycbydJgjEt2H-aSjr5_QenG5x4dBisHNXGNp4jhIjffLIRZ1joAGWzVYTkOXezrLLZDzI/exec';
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('id')) {
+  fetch(`${shareUrl}?id=${urlParams.get('id')}`)
+      .then(response => response.json())
+      .then(data => fromJSON(data.data));
+  window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
+}
+
 let apiData;
 const guilds = new Set();
 fetch('https://api.wynncraft.com/public_api.php?action=territoryList')
@@ -424,5 +434,13 @@ function fromJSON(saveObject) {
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
 }
+
+document.querySelector('#share').addEventListener('click', () => {
+  fetch(shareUrl, {
+    body: JSON.stringify({data: toJSON()}), headers: {'Content-Type': 'text/plain'}, method: 'POST',
+  })
+      .then(response => response.json())
+      .then(data => alert(`${window.location.href.split('?')[0]}?id=${data.id}`));
+});
 
 document.querySelector('aside footer span').addEventListener('click', createModal('.modal-credit'));
