@@ -3,15 +3,7 @@ import upgradeData from '../data/upgrades.json' assert {type: 'json'};
 import {Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 
-const shareUrl = 'https://script.google.com/macros/s/AKfycbzYaLy9cgt4rw-agWgMd6uwxR-LOi4-EU5XSubM_0KoWoMRjwR84opa1lHIK_fYxlKM/exec';
-
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('id')) {
-  fetch(`${shareUrl}?id=${urlParams.get('id')}`)
-      .then(response => response.json())
-      .then(data => fromJSON(data));
-  window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
-}
+const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfbWGLN_F97T7VWs9rSgHnozfHQOb2SUrM1qxzj7iSHuIST_/exec';
 
 let apiData;
 const guilds = new Set();
@@ -21,6 +13,15 @@ fetch('https://api.wynncraft.com/public_api.php?action=territoryList')
       apiData = data['territories'];
       Object.values(apiData).forEach(territory => guilds.add(territory['guild']));
       Object.values(apiData).forEach(territory => guilds.add(territory['guildPrefix']));
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('id')) {
+        fetch(`${shareUrl}?id=${urlParams.get('id')}`)
+            .then(response => response.json())
+            .then(data => fromJSON(data));
+        window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
+      } else {
+        loadFromLocalStorage();
+      }
     });
 
 const availableTerritories = Object.keys(territoryData);
@@ -28,9 +29,6 @@ let hq = null;
 const hqDistances = {};
 const territories = {};
 const tributes = {'emeralds': 0, 'ore': 0, 'wood': 0, 'fish': 0, 'crops': 0};
-Object.keys(tributes).forEach(resource => document.querySelector(`#${resource}Tributes`).value = 0);
-tooltips.init();
-tooltips.updateTotal(territories, tributes);
 
 createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => {
   let counter = 0;
@@ -43,6 +41,7 @@ createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => 
   }
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
   return `Added ${counter}!`;
 });
 
@@ -50,6 +49,7 @@ createInputMenu('#addTerritory', '#addTerritoryResults', availableTerritories, t
   addTerritory(territoryName);
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
   return 'Added!';
 });
 
@@ -139,6 +139,7 @@ const openEditModal = createModal('.modal-edit', () => {
   }
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
   setTimeout(clearSelection, 100);
 });
 
@@ -210,6 +211,7 @@ document.querySelector('#resetTerrs').addEventListener('click', () => {
   }
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
   clearSelection();
 });
 
@@ -233,6 +235,7 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
       }
     }
   }
+  availableTerritories.sort();
   if (hqRemoved) {
     if (Object.keys(territories).length > 0) {
       setHq(Object.keys(territories)[0]);
@@ -240,14 +243,16 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
       setHq(null);
     }
   }
-  updateSelection();
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
+  updateSelection();
 });
 
 const openTributeModal = createModal('.modal-tributes', () => {
   for (const resource of Object.keys(tributes)) {
     tributes[resource] = +document.querySelector(`#${resource}Tributes`).value;
   }
+  localStorage.setItem('tributes', JSON.stringify(tributes));
   tooltips.updateTotal(territories, tributes);
 });
 document.querySelector('#tributes').addEventListener('click', openTributeModal);
@@ -260,10 +265,12 @@ document.querySelector('#setHq').addEventListener('click', () => {
 function setHq(territoryName) {
   if (territoryName == null) {
     hq = null;
+    localStorage.removeItem('hq');
     return;
   }
   const oldHq = hq;
   hq = territoryName;
+  localStorage.setItem('hq', hq);
   updateHqDistances();
   for (const territory of Object.values(territories)) {
     territory.distanceToHq = hqDistances[territory.name];
@@ -340,6 +347,7 @@ function setTreasury(items, value = null) {
     tooltips.updateTerritoryProduction(territory);
   }
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
 }
 
 document.addEventListener('click', event => {
@@ -385,16 +393,35 @@ document.querySelector('#export').addEventListener('click', () => {
   anchorElement.click();
 });
 
-function toJSON() {
-  const exportObject = {hq: hq, territories: {}, tributes: tributes};
+function createTerritorySaveObject() {
+  const territorySaveObject = {};
   for (const territory of Object.values(territories)) {
-    exportObject.territories[territory.name] = {
+    territorySaveObject[territory.name] = {
       treasury: Math.round(territory.baseTreasury * 100) / 100,
       upgrades: Object.entries(territory.upgrades).filter(([, value]) => value > 0)
           .reduce((object, [name, value]) => ({...object, [name]: value}), {}),
     };
   }
-  return exportObject;
+  return territorySaveObject;
+}
+
+function updateLocalStorage() {
+  localStorage.setItem('territories', JSON.stringify(createTerritorySaveObject()));
+}
+
+function loadFromLocalStorage() {
+  const savedHq = localStorage.getItem('hq');
+  const savedTerritories = localStorage.getItem('territories');
+  const savedTributes = localStorage.getItem('tributes');
+  fromJSON({
+    hq: savedHq,
+    territories: savedTerritories === null ? {} : JSON.parse(savedTerritories),
+    tributes: savedTributes === null ? tributes : JSON.parse(savedTributes),
+  });
+}
+
+function toJSON() {
+  return {hq: hq, territories: createTerritorySaveObject(), tributes: tributes};
 }
 
 const fileInput = document.querySelector('#import-file');
@@ -411,11 +438,17 @@ fileInput.addEventListener('change', () => {
 }, false);
 
 function fromJSON(saveObject) {
+  if (saveObject === null) {
+    loadFromLocalStorage();
+    return;
+  }
   for (const territoryName of Object.keys(territories)) {
     delete territories[territoryName];
     tooltips.removeTerritory(territoryName);
     availableTerritories.push(territoryName);
   }
+  availableTerritories.sort();
+  tooltips.init();
   setHq(null);
   for (const [territoryName, territoryData] of Object.entries(saveObject.territories)) {
     addTerritory(territoryName, territoryData.treasury);
@@ -429,11 +462,13 @@ function fromJSON(saveObject) {
     tributes[resource] = amount;
     document.querySelector(`#${resource}Tributes`).value = amount;
   });
+  localStorage.setItem('tributes', JSON.stringify(tributes));
   for (const territory of Object.values(territories)) {
     tooltips.updateTerritory(territory);
   }
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
 }
 
 document.querySelector('#share').addEventListener('click', () => {

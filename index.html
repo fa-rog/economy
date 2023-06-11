@@ -69,14 +69,20 @@
     <span>Info & Credits</span>
   </footer>
 </aside>
-<main></main>
+<main>
+  <div class="tooltip total">
+    <h4>Loading...</h4>
+    <br>
+    <span class="gray">Please wait a second.</span>
+  </div>
+</main>
 <div class="modal-wrapper modal-edit">
   <div class="modal">
     <section>
       <span class="close">&times;</span>
       <h2>Upgrades and Bonuses for selected territories <span data-value="selection"></span></h2>
     </section>
-    <section class="upgrades">
+    <section class="upgrades bright-bg">
       <ul>
         <li><img alt="Damage" src="assets/img/upgrades/damage.png"><span>0</span>
         <li><img alt="Attack" src="assets/img/upgrades/attack.png"><span>0</span>
@@ -120,7 +126,7 @@
       <span class="close">&times;</span>
       <h2>Total Tributes</h2>
     </section>
-    <section class="tributes">
+    <section class="tributes bright-bg">
       <div><label for="emeraldsTributes">Emeralds: </label><input id="emeraldsTributes" type="number"></div>
       <div><label for="oreTributes">Ore: </label><input id="oreTributes" type="number"></div>
       <div><label for="woodTributes">Wood: </label><input id="woodTributes" type="number"></div>
@@ -128,7 +134,7 @@
       <div><label for="cropsTributes">Crops: </label><input id="cropsTributes" type="number"></div>
     </section>
     <section>
-      <p>Use negative numbers for resources you give out, and positive numbers for resources you receive.
+      <p>Use negative numbers for resources you give out and positive numbers for resources you receive.
       <p>Tributes will be applied once you leave this window.
     </section>
   </div>
@@ -139,15 +145,18 @@
       <span class="close">&times;</span>
       <h2>Wynncraft Economy Simulator</h2>
     </section>
-    <section>
+    <section class="about bright-bg">
       <p>This website allows you to upgrade and edit territories just like you would in Wynncraft.
       <p>Made by farog, feel free to contact me on Discord (farog#8881) if you notice a bug or have feature requests.
-        <br><br>
-      <h3>Additional Credits:</h3>
+    </section>
+    <br><br>
+    <section class="credits">
+      <h3>Credits for things I copied from other projects:</h3>
       <ul>
+        <li><a href="https://avicia.ml/map-maker/" target="_blank">Avicia's Map Maker</a> (Albb_n): Shortened link
+          functionality for sharing
         <li><a href="https://aviciaguild.github.io/resource-updater/" target="_blank">Avicia's Resource Updater</a>
           (newracket): General inspiration and design of territory upgrade menu
-        <li><a href="https://wynncraft.com" target="_blank">Wynncraft</a>: The game itself (obviously) and its API
         <li><a href="https://wynndata.tk" target="_blank">Wynndata</a> (dukioooo): Territory box design
       </ul>
     </section>

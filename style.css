@@ -295,7 +295,7 @@ main .selected {
 }
 
 .modal {
-  background-color: #816f57;
+  background-color: hsl(34, 19%, 50%);
   box-shadow: 0 0 8px 4px #0004;
   margin: 0 auto;
   padding: 10px 20px;
@@ -333,15 +333,28 @@ main .selected {
   padding: 2px 16px;
 }
 
-.modal .tributes,
-.modal .upgrades {
+.modal .bright-bg {
   background-color: #c4ab79;
   border-radius: 10px;
   display: inline-block;
   margin: 0 auto;
+}
+
+.modal .tributes,
+.modal .upgrades {
   padding: 10px 10px 7px;
   text-align: left;
   user-select: none;
+}
+
+.modal .about {
+  padding: 5px 15px;
+  text-align: left;
+}
+
+.modal .credits {
+  display: inline-block;
+  margin: 0 auto;
 }
 
 .modal .upgrades ul {

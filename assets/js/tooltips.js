@@ -38,7 +38,7 @@ export function init() {
   const costSection = document.createElement('section');
   costSection.setAttribute('data-type', 'costs');
   tooltip.appendChild(costSection);
-  mainElement.appendChild(tooltip);
+  mainElement.replaceChildren(tooltip);
 }
 
 export function updateTotal(territories, tributes) {
