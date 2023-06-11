@@ -3,13 +3,13 @@ import upgradeData from '../data/upgrades.json' assert {type: 'json'};
 import {Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 
-const shareUrl = 'https://script.google.com/macros/s/AKfycbydJgjEt2H-aSjr5_QenG5x4dBisHNXGNp4jhIjffLIRZ1joAGWzVYTkOXezrLLZDzI/exec';
+const shareUrl = 'https://script.google.com/macros/s/AKfycbzYaLy9cgt4rw-agWgMd6uwxR-LOi4-EU5XSubM_0KoWoMRjwR84opa1lHIK_fYxlKM/exec';
 
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('id')) {
   fetch(`${shareUrl}?id=${urlParams.get('id')}`)
       .then(response => response.json())
-      .then(data => fromJSON(data.data));
+      .then(data => fromJSON(data));
   window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
 }
 
@@ -28,9 +28,7 @@ let hq = null;
 const hqDistances = {};
 const territories = {};
 const tributes = {'emeralds': 0, 'ore': 0, 'wood': 0, 'fish': 0, 'crops': 0};
-for (const [resource, amount] of Object.entries(tributes)) {
-  document.querySelector(`#${resource}Tributes`).value = amount;
-}
+Object.keys(tributes).forEach(resource => document.querySelector(`#${resource}Tributes`).value = 0);
 tooltips.init();
 tooltips.updateTotal(territories, tributes);
 
@@ -110,12 +108,12 @@ function createMatchingList(items, input) {
   return lines;
 }
 
-function addTerritory(territoryName) {
+function addTerritory(territoryName, baseTreasury = null) {
   availableTerritories.splice(availableTerritories.indexOf(territoryName), 1);
   territories[territoryName] = new Territory(territoryName,
       territoryData[territoryName].connections.filter(conn => conn in territories).length,
       territoryData[territoryName]['resources'], apiData[territoryName]['acquired'],
-      hqDistances[territoryName]);
+      hqDistances[territoryName], baseTreasury);
   tooltips.addTerritory(territories[territoryName]).addEventListener('click', event => {
     event.currentTarget.classList.toggle('selected');
     updateSelection();
@@ -337,7 +335,7 @@ function createTreasuryMenu(buttonTag, optionListTag, callback) {
 function setTreasury(items, value = null) {
   for (const item of Object.values(items)) {
     const territory = item instanceof Element ? territories[item.getAttribute('data-name')] : item;
-    territory.updateTreasury(value);
+    territory.setBaseTreasury(value);
     territory.updateProduction();
     tooltips.updateTerritoryProduction(territory);
   }
@@ -388,10 +386,10 @@ document.querySelector('#export').addEventListener('click', () => {
 });
 
 function toJSON() {
-  const exportObject = {hq: hq, territories: {}};
+  const exportObject = {hq: hq, territories: {}, tributes: tributes};
   for (const territory of Object.values(territories)) {
     exportObject.territories[territory.name] = {
-      treasury: Math.round((territory.treasuryBonus - 1) * 100) / 100,
+      treasury: Math.round(territory.baseTreasury * 100) / 100,
       upgrades: Object.entries(territory.upgrades).filter(([, value]) => value > 0)
           .reduce((object, [name, value]) => ({...object, [name]: value}), {}),
     };
@@ -420,14 +418,17 @@ function fromJSON(saveObject) {
   }
   setHq(null);
   for (const [territoryName, territoryData] of Object.entries(saveObject.territories)) {
-    addTerritory(territoryName);
-    territories[territoryName].treasuryBonus = territoryData.treasury;
+    addTerritory(territoryName, territoryData.treasury);
     for (const [upgradeName, upgradeValue] of Object.entries(territoryData.upgrades)) {
       territories[territoryName].upgrades[upgradeName] = upgradeValue;
     }
     territories[territoryName].update();
   }
   setHq(saveObject.hq);
+  Object.entries(saveObject.tributes).forEach(([resource, amount]) => {
+    tributes[resource] = amount;
+    document.querySelector(`#${resource}Tributes`).value = amount;
+  });
   for (const territory of Object.values(territories)) {
     tooltips.updateTerritory(territory);
   }
@@ -437,7 +438,7 @@ function fromJSON(saveObject) {
 
 document.querySelector('#share').addEventListener('click', () => {
   fetch(shareUrl, {
-    body: JSON.stringify({data: toJSON()}), headers: {'Content-Type': 'text/plain'}, method: 'POST',
+    body: JSON.stringify(toJSON()), headers: {'Content-Type': 'text/plain'}, method: 'POST',
   })
       .then(response => response.json())
       .then(data => alert(`${window.location.href.split('?')[0]}?id=${data.id}`));
