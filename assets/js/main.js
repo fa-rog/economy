@@ -7,7 +7,7 @@ const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfb
 
 let apiData;
 const guilds = new Set();
-fetch('https://api.wynncraft.com/public_api.php?action=territoryList')
+fetch('https://athena.wynntils.com/cache/get/territoryList')
     .then(response => response.json())
     .then(data => {
       apiData = data['territories'];
