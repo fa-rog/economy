@@ -114,9 +114,15 @@ function addTerritory(territoryName, baseTreasury = null) {
       territoryData[territoryName].connections.filter(conn => conn in territories).length,
       territoryData[territoryName]['resources'], apiData[territoryName]['acquired'],
       hqDistances[territoryName], baseTreasury);
-  tooltips.addTerritory(territories[territoryName]).addEventListener('click', event => {
+  const territoryBox = tooltips.addTerritory(territories[territoryName]);
+  territoryBox.addEventListener('click', event => {
     event.currentTarget.classList.toggle('selected');
     updateSelection();
+  });
+  territoryBox.addEventListener('dblclick', event => {
+    event.currentTarget.classList.add('selected');
+    updateSelection();
+    editTerritories();
   });
   if (hq === null) {
     setHq(territoryName);
@@ -143,7 +149,7 @@ const openEditModal = createModal('.modal-edit', () => {
   setTimeout(clearSelection, 100);
 });
 
-document.querySelector('#editTerrs').addEventListener('click', () => {
+function editTerritories() {
   const selectedTerritories = [...document.querySelectorAll('.selected')];
   const upgradeSpans = document.querySelectorAll('.modal .upgrades span');
   for (const [index, upgrade] of Object.keys(upgradeData).entries()) {
@@ -152,7 +158,9 @@ document.querySelector('#editTerrs').addEventListener('click', () => {
     }));
   }
   openEditModal();
-});
+}
+
+document.querySelector('#editTerrs').addEventListener('click', editTerritories);
 
 for (const item of document.querySelectorAll('.modal .upgrades li')) {
   item.addEventListener('contextmenu', event => event.preventDefault());
