@@ -114,7 +114,7 @@ aside input {
   outline: none;
   padding: 6px 10px;
   text-align: center;
-  transition: background-color 0.1s;
+  transition: background-color 0.1s, opacity 0.1s;
   width: 90%;
 }
 
@@ -171,7 +171,7 @@ aside ul:not(.treasury) li:hover {
 
 aside button:hover:not(:disabled),
 aside input:hover:not(:focus):not(:disabled) {
-  background-color: #ccc;
+  background-color: #bbb;
 }
 
 aside :disabled {
