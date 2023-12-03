@@ -181,7 +181,7 @@ aside :disabled {
 
 aside :disabled:not(.treasury) {
   background-color: #77a18f;
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
 aside .success,
@@ -198,6 +198,7 @@ aside input.active {
 
 aside input::placeholder {
   color: #1d1905;
+  opacity: 1;
 }
 
 aside input:focus::placeholder {

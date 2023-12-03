@@ -1,5 +1,5 @@
-import territoryData from '../data/territories.json' assert {type: 'json'};
-import upgradeData from '../data/upgrades.json' assert {type: 'json'};
+import territoryData from '../data/territories.js';
+import upgradeData from '../data/upgrades.js';
 import {Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 

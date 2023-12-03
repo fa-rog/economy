@@ -1,4 +1,4 @@
-import upgradeData from '../data/upgrades.json' assert {type: 'json'};
+import upgradeData from '../data/upgrades.js';
 
 const colors = {
   'emeralds': 'green',
