@@ -479,4 +479,11 @@ document.querySelector('#share').addEventListener('click', () => {
       .then(data => alert(`${window.location.href.split('?')[0]}?id=${data.id}`));
 });
 
+document.querySelector('#clear').addEventListener('click', () => {
+  if (confirm('Warning!\nThis is going to reset everything you did on this page.')) {
+    localStorage.clear();
+    location.reload();
+  }
+});
+
 document.querySelector('aside footer span').addEventListener('click', createModal('.modal-credit'));
