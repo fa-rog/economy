@@ -6,13 +6,14 @@ import * as tooltips from './tooltips.js';
 const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfbWGLN_F97T7VWs9rSgHnozfHQOb2SUrM1qxzj7iSHuIST_/exec';
 
 let apiData;
-const guilds = new Set();
+const guilds = [];
 fetch('https://athena.wynntils.com/cache/get/territoryList')
     .then(response => response.json())
     .then(data => {
       apiData = data['territories'];
-      Object.values(apiData).forEach(territory => guilds.add(territory['guild']));
-      Object.values(apiData).forEach(territory => guilds.add(territory['guildPrefix']));
+      Object.values(apiData)
+          .forEach(territory => guilds.push(`${territory['guild']} [${territory['guildPrefix']}]`));
+      guilds.sort();
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('id')) {
         fetch(`${shareUrl}?id=${urlParams.get('id')}`)
@@ -32,9 +33,9 @@ const tributes = {'emeralds': 0, 'ore': 0, 'wood': 0, 'fish': 0, 'crops': 0};
 
 createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => {
   let counter = 0;
+  const guildPrefix = guild.split('[')[1].split(']')[0];
   for (const territory of Object.values(apiData)) {
-    if ((guild === territory['guild'] || guild === territory['guildPrefix']) &&
-        !(territory['territory'] in territories)) {
+    if (territory['guildPrefix'] === guildPrefix && !(territory['territory'] in territories)) {
       addTerritory(territory['territory']);
       counter++;
     }
@@ -56,11 +57,15 @@ createInputMenu('#addTerritory', '#addTerritoryResults', availableTerritories, t
 function createInputMenu(inputTag, resultListTag, items, callback) {
   const input = document.querySelector(inputTag);
   const resultList = document.querySelector(resultListTag);
-  input.addEventListener('input', () => {
+
+  function updateChoices() {
     const choices = createMatchingList(items, input.value);
     resultList.replaceChildren(...choices);
     input.className = choices.length > 0 ? 'active' : '';
-  });
+  }
+
+  input.addEventListener('click', updateChoices);
+  input.addEventListener('input', updateChoices);
   resultList.addEventListener('click', event => {
     if (event.target.tagName.toLowerCase() === 'li') {
       resultList.replaceChildren();
