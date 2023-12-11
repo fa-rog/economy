@@ -126,7 +126,7 @@ function capitalize(word) {
 }
 
 function round(number, digits = 0) {
-  return Math.round(number * (10 ^ digits)) / (10 ^ digits);
+  return Math.round(number * (10 ** digits)) / (10 ** digits);
 }
 
 function createSpan(text, color) {
