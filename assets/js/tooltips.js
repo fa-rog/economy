@@ -83,7 +83,13 @@ function updateTotalCosts(territories, tributes) {
       line.appendChild(image);
       line.appendChild(createSpan(' '));
     }
-    line.appendChild(createSpan(`${round(cost)} ${capitalize(resource)} `, 'gray'));
+    line.appendChild(createSpan(`${format(cost)} ${capitalize(resource)} `, 'gray'));
+    const difference = production - cost;
+    if (difference > 0) {
+      line.appendChild(createSpan(`(+${format(difference)}) `, 'blue'));
+    } else {
+      line.appendChild(createSpan(`(${format(difference)}) `, 'red'));
+    }
     if (production > 0) {
       const percentage = Math.floor(100 * cost / production);
       line.appendChild(createSpan(`(${percentage}%)`, percentage > 100 ? 'red' : 'dark-gray'));
@@ -129,9 +135,16 @@ function round(number, digits = 0) {
   return Math.round(number * (10 ** digits)) / (10 ** digits);
 }
 
+function format(number) {
+  const tier = Math.log10(Math.abs(number)) / 3 | 0;
+  return round(number / (10 ** (3 * tier)), 2) + ['', 'k', 'M', 'G'][tier];
+}
+
 function createSpan(text, color) {
   const span = document.createElement('span');
-  span.className = color;
+  if (color !== undefined) {
+    span.className = color;
+  }
   span.innerText = text;
   return span;
 }

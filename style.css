@@ -26,6 +26,10 @@ body {
   color: #555;
 }
 
+.blue {
+  color: #55f;
+}
+
 .green {
   color: #5f5;
 }
@@ -68,6 +72,10 @@ body {
 
 .bg-yellow {
   background-color: #ff5;
+}
+
+.invisible {
+  opacity: 0;
 }
 
 [hidden] {
@@ -239,7 +247,7 @@ main .tooltip {
   outline-offset: -4px;
   padding: 10px;
   user-select: none;
-  width: 240px;
+  width: 260px;
 }
 
 main .tooltip:not(.total) {
