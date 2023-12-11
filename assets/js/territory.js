@@ -45,7 +45,7 @@ export class Territory {
 
   setBaseTreasury(value) {
     if (value === null) {
-      const hoursHeld = (new Date() - new Date(this.acquired.replace(/\s/, 'T') + 'Z')) / 3600000;
+      const hoursHeld = (new Date() - new Date(this.acquired)) / 3600000;
       if (hoursHeld >= 24 * 12) {
         this.baseTreasury = 0.3;
       } else if (hoursHeld >= 24 * 5) {
