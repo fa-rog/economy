@@ -84,8 +84,8 @@ function updateTotalCosts(territories, tributes) {
       line.appendChild(createSpan(' '));
     }
     line.appendChild(createSpan(`${format(cost)} ${capitalize(resource)} `, 'gray'));
-    const difference = production - cost;
-    if (difference > 0) {
+    const difference = round(production - cost);
+    if (difference >= 0) {
       line.appendChild(createSpan(`(+${format(difference)}) `, 'blue'));
     } else {
       line.appendChild(createSpan(`(${format(difference)}) `, 'red'));
