@@ -7,29 +7,37 @@ const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfb
 
 let apiData;
 const guilds = [];
-fetch('https://athena.wynntils.com/cache/get/territoryList')
-    .then(response => response.json())
-    .then(data => {
-      apiData = data['territories'];
-      Object.values(apiData)
-          .forEach(territory => guilds.push(`${territory['guild']} [${territory['guildPrefix']}]`));
-      guilds.sort();
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('id')) {
-        fetch(`${shareUrl}?id=${urlParams.get('id')}`)
-            .then(response => response.json())
-            .then(data => fromJSON(data));
-        window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
-      } else {
-        loadFromLocalStorage();
-      }
-    });
+try {
+  const response = await fetch('https://athena.wynntils.com/cache/get/territoryList');
+  if (!response.ok) {
+    throw new Error(`Response status: ${response.status}`);
+  }
+
+  apiData = (await response.json())['territories'];
+  Object.values(apiData)
+    .forEach(territory => guilds.push(`${territory['guild']} [${territory['guildPrefix']}]`));
+  guilds.sort();
+} catch (error) {
+  document.querySelector('#loadTerritories').disabled = true;
+  document.querySelector('#loadTreasury').disabled = true;
+  apiData = Object.fromEntries(Object.keys(territoryData).map(name => [name, {acquired: null}]));
+}
 
 const availableTerritories = Object.keys(territoryData);
 let hq = null;
 const hqDistances = {};
 const territories = {};
 const tributes = {'emeralds': 0, 'ore': 0, 'wood': 0, 'fish': 0, 'crops': 0};
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('id')) {
+  fetch(`${shareUrl}?id=${urlParams.get('id')}`)
+    .then(response => response.json())
+    .then(data => fromJSON(data));
+  window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
+} else {
+  loadFromLocalStorage();
+}
 
 createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => {
   let counter = 0;

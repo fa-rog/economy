@@ -5,7 +5,7 @@ export class Territory {
     this.name = name;
     this.connections = connections;
     this.resources = resources;
-    this.acquired = acquired;
+    this.acquired = acquired === null ? new Date() : new Date(acquired);
     this.distanceToHq = hqDistance;
     this.hqBonus = 1;
     this.costs = {};
@@ -45,7 +45,7 @@ export class Territory {
 
   setBaseTreasury(value) {
     if (value === null) {
-      const hoursHeld = (new Date() - new Date(this.acquired)) / 3600000;
+      const hoursHeld = (new Date() - this.acquired) / 3600000;
       if (hoursHeld >= 24 * 12) {
         this.baseTreasury = 0.3;
       } else if (hoursHeld >= 24 * 5) {
