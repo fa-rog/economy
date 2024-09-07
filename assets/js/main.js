@@ -43,7 +43,7 @@ createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => 
   let counter = 0;
   const guildPrefix = guild.split('[')[1].split(']')[0];
   for (const territory of Object.values(apiData)) {
-    if (territory['guildPrefix'] === guildPrefix && !(territory['territory'] in territories)) {
+    if (territory['guildPrefix'] + '' === guildPrefix && !(territory['territory'] in territories)) {
       addTerritory(territory['territory']);
       counter++;
     }
@@ -125,7 +125,8 @@ function addTerritory(territoryName, baseTreasury = null) {
   availableTerritories.splice(availableTerritories.indexOf(territoryName), 1);
   territories[territoryName] = new Territory(territoryName,
       territoryData[territoryName].connections.filter(conn => conn in territories).length,
-      territoryData[territoryName]['resources'], apiData[territoryName]['acquired'],
+      territoryData[territoryName]['resources'],
+      territoryName in apiData ? apiData[territoryName]['acquired'] : null,
       hqDistances[territoryName], baseTreasury);
   const territoryBox = tooltips.addTerritory(territories[territoryName]);
   territoryBox.addEventListener('click', event => {
