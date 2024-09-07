@@ -36,7 +36,12 @@ if (urlParams.has('id')) {
     .then(data => fromJSON(data));
   window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
 } else {
-  loadFromLocalStorage();
+  try {
+      loadFromLocalStorage();
+  } catch (error) {
+      localStorage.clear();
+      location.reload();
+  }
 }
 
 createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => {
