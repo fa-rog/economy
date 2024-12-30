@@ -332,6 +332,28 @@ function updateHqDistances() {
   }
 }
 
+function setStorages() {
+  for (const selected of document.querySelectorAll('.selected')) {
+    const territory = territories[selected.getAttribute('data-name')];
+    if (territory.name !== hq) {
+      territory.upgrades.emeraldStorage = 0;
+      territory.upgrades.resourceStorage = 0;
+    }
+    const minEms = Math.round((territory.costs.emeralds + territory.production.emeralds) / 60);
+    const minRes = Math.max(...['ore', 'wood', 'fish', 'crops']
+        .map(res => Math.round((territory.costs[res] + territory.production[res]) / 60)));
+    while (3000 * upgradeData.emeraldStorage.effects[territory.upgrades.emeraldStorage] < minEms) {
+      territory.upgrades.emeraldStorage++;
+    }
+    while (300 * upgradeData.resourceStorage.effects[territory.upgrades.resourceStorage] < minRes) {
+      territory.upgrades.resourceStorage++;
+    }
+    tooltips.updateTerritory(territory);
+  }
+  clearSelection();
+}
+document.querySelector('#setStorages').addEventListener('click', setStorages);
+
 document.querySelector('#loadTreasury').addEventListener('click', event => {
   setTreasury(territories);
   event.target.classList.add('success');
@@ -409,6 +431,7 @@ function updateSelection() {
   document.querySelector('#resetTerrs').disabled = amount === 0;
   document.querySelector('#removeTerrs').disabled = amount === 0;
   document.querySelector('#setHq').disabled = amount !== 1;
+  document.querySelector('#setStorages').disabled = amount === 0;
   document.querySelector('#selectedTreasury').disabled = amount === 0;
 }
 
