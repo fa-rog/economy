@@ -217,6 +217,10 @@ export function updateTerritoryStats(territory) {
   title.innerText = territory.name;
   if (territory.distanceToHq === 0) {
     title.innerText += ' (HQ)';
+  } else if (territory.distanceToHq === 1) {
+    title.innerText += ' (Conn)';
+  } else if (territory.distanceToHq <= 3) {
+    title.innerText += ' (Ext)';
   }
   const lines = [];
   const difficulty = territory.difficulty;
