@@ -170,10 +170,21 @@ export function updateTerritory(territory) {
 export function updateTerritoryProduction(territory) {
   const lines = [];
   for (const [resource, production] of Object.entries(territory.production)) {
+    const color = colors[resource];
     if (production > 0) {
-      const color = colors[resource];
       const line = createResourceImageLine(resource);
       line.appendChild(createSpan(`+${round(production)} ${capitalize(resource)} per Hour`, color));
+      lines.push(line);
+    }
+    const stored = round((territory.costs[resource] + production) / 60);
+    if (stored > 0) {
+      const isHq = territory.distanceToHq === 0;
+      const max = resource === 'emeralds' ?
+          ((isHq ? 5000 : 3000) * upgradeData.emeraldStorage.effects[territory.upgrades.emeraldStorage]) :
+          ((isHq ? 1500 : 300) * upgradeData.resourceStorage.effects[territory.upgrades.resourceStorage]);
+      const line = createResourceImageLine(resource);
+      line.appendChild(createSpan(`${stored}`, stored > max ? 'red' : color));
+      line.appendChild(createSpan(`/${max} stored`, color));
       lines.push(line);
     }
   }
