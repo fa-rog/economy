@@ -299,19 +299,18 @@ function setHq(territoryName) {
   hq = territoryName;
   localStorage.setItem('hq', hq);
   updateHqDistances();
+  const centralTerrs = Object.values(territories).filter(terr => terr.distanceToHq <= 3).length;
+  territories[hq].hqBonus = 1.25 + 0.25 * centralTerrs;
+  if (oldHq in territories) {
+    territories[oldHq].hqBonus = 1;
+  }
   for (const territory of Object.values(territories)) {
     territory.distanceToHq = hqDistances[territory.name];
     territory.updateTreasury();
     territory.updateProduction();
     tooltips.updateTerritoryProduction(territory);
+    tooltips.updateTerritoryStats(territory);
   }
-  if (oldHq in territories) {
-    territories[oldHq].hqBonus = 1;
-    tooltips.updateTerritoryStats(territories[oldHq]);
-  }
-  const centralTerrs = Object.values(territories).filter(terr => terr.distanceToHq <= 3).length;
-  territories[hq].hqBonus = 1.25 + 0.25 * centralTerrs;
-  tooltips.updateTerritoryStats(territories[hq]);
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
 }
