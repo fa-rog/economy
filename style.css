@@ -78,6 +78,26 @@ body {
   display: none;
 }
 
+/* Minecraft-like tooltips */
+
+.tooltip {
+  background-color: black;
+  border: 2px solid black;
+  border-radius: 5px;
+  box-shadow: black 0 0 4px;
+  color: white;
+  display: inline-block;
+  line-height: 1.3;
+  outline: 2px solid #2c075f;
+  outline-offset: -4px;
+  padding: 10px;
+  user-select: none;
+}
+
+.tooltip img {
+  vertical-align: middle;
+}
+
 /* Sidebar */
 
 aside {
@@ -232,26 +252,12 @@ main {
 }
 
 main .tooltip {
-  background-color: black;
-  border: 2px solid black;
-  border-radius: 5px;
-  color: white;
-  display: inline-block;
-  line-height: 1.3;
   margin: 10px;
-  outline: 2px solid #2c075f;
-  outline-offset: -4px;
-  padding: 10px;
-  user-select: none;
   width: 260px;
 }
 
 main .tooltip:not(.total) {
   cursor: pointer;
-}
-
-main .tooltip img {
-  vertical-align: middle;
 }
 
 main .selected {
@@ -312,7 +318,7 @@ main .selected {
   padding: 10px 0;
 }
 
-.modal p {
+.modal > p {
   margin: 10px 0;
 }
 
@@ -380,7 +386,22 @@ main .selected {
   background-color: #e2d5bc;
 }
 
-.modal .upgrades li span {
+.modal .upgrades li .tooltip {
+  margin-left: 10px;
+  opacity: 0;
+  position: absolute;
+  transition: opacity 0.1s;
+  visibility: hidden;
+  width: 220px;
+  z-index: 1;
+}
+
+.modal .upgrades li:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal .upgrades li > span {
   color: white;
   font-size: 20px;
   position: absolute;

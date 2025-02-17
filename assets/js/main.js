@@ -171,10 +171,13 @@ const openEditModal = createModal('.modal-edit', () => {
 function editTerritories() {
   const selectedTerritories = [...document.querySelectorAll('.selected')];
   const upgradeSpans = document.querySelectorAll('.modal .upgrades span');
+  const upgradeTooltips = document.querySelectorAll('.modal .upgrades .tooltip');
   for (const [index, upgrade] of Object.keys(upgradeData).entries()) {
-    upgradeSpans[index].innerText = Math.min(...selectedTerritories.map(selected => {
+    const level = Math.min(...selectedTerritories.map(selected => {
       return territories[selected.getAttribute('data-name')].upgrades[upgrade];
     }));
+    upgradeSpans[index].innerText = level;
+    tooltips.updateUpgrade(upgradeTooltips[index], upgrade, level);
   }
   openEditModal();
 }
@@ -182,6 +185,9 @@ function editTerritories() {
 document.querySelector('#editTerrs').addEventListener('click', editTerritories);
 
 for (const item of document.querySelectorAll('.modal .upgrades li')) {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'tooltip';
+  item.appendChild(tooltip);
   item.addEventListener('contextmenu', event => event.preventDefault());
   item.addEventListener('mousedown', event => {
     const [image, span] = event.currentTarget.childNodes;
@@ -194,6 +200,7 @@ for (const item of document.querySelectorAll('.modal .upgrades li')) {
       upgradeValue = Math.max(upgradeValue - step, 0);
     }
     span.innerText = upgradeValue;
+    tooltips.updateUpgrade(item.querySelector('.tooltip'), upgrade, upgradeValue);
     for (const selected of document.querySelectorAll('.selected')) {
       const territory = territories[selected.getAttribute('data-name')];
       territory.upgrades[upgrade] = upgradeValue;

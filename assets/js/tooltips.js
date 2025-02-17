@@ -273,3 +273,40 @@ export function sortTerritories() {
           .reduce((first, second) => second - first))
       .forEach(tooltip => mainElement.appendChild(tooltip));
 }
+
+export function updateUpgrade(tooltip, upgrade, level) {
+  const data = upgradeData[upgrade];
+  const lines = [];
+  const heading = document.createElement('h4');
+  heading.appendChild(createSpan(data.name, 'light-purple'));
+  heading.appendChild(createSpan(` [Lv. ${level}]`, 'gray'))
+  lines.push(heading);
+  lines.push(document.createElement('br'));
+  const value = data.display.endsWith('%') ? (data.effects[level] - 1) * 100 : data.effects[level];
+  const valueLine = document.createElement('p');
+  valueLine.appendChild(createSpan(data.display.replace('{}', round(value, 2)), 'light-purple'));
+  lines.push(valueLine);
+  lines.push(document.createElement('br'));
+  const costHeading = document.createElement('p');
+  costHeading.appendChild(createSpan('Cost (per hour):', 'green'));
+  lines.push(costHeading);
+  const costLine = document.createElement('p');
+  costLine.appendChild(createSpan('- ', 'green'));
+  if (data.resource !== 'emeralds') {
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = `assets/img/resources/${data.resource}_gray.png`;
+    costLine.appendChild(image);
+    costLine.appendChild(createSpan(' '));
+  }
+  costLine.appendChild(createSpan(`${data.costs[level]} ${capitalize(data.resource)}`, 'gray'));
+  lines.push(costLine);
+  lines.push(document.createElement('br'));
+  const leftClickLine = document.createElement('p');
+  leftClickLine.appendChild(createSpan('Left-Click to increase', 'gray'));
+  lines.push(leftClickLine);
+  const rightClickLine = document.createElement('p');
+  rightClickLine.appendChild(createSpan('Right-Click to decrease', 'gray'));
+  lines.push(rightClickLine);
+  tooltip.replaceChildren(...lines);
+}
