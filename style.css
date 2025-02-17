@@ -392,7 +392,7 @@ main .selected {
   position: absolute;
   transition: opacity 0.1s;
   visibility: hidden;
-  width: 220px;
+  width: 230px;
   z-index: 1;
 }
 
