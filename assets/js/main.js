@@ -235,6 +235,9 @@ function createModal(modalWrapperTag, callbackOnClose = () => void 0) {
 }
 
 document.querySelector('#resetTerrs').addEventListener('click', () => {
+  if (!confirm('Warning!\nThis will reset the upgrades for all selected territories.')) {
+    return;
+  }
   for (const selected of document.querySelectorAll('.selected')) {
     const territory = territories[selected.getAttribute('data-name')];
     for (const upgrade of Object.keys(territory.upgrades)) {
@@ -250,6 +253,9 @@ document.querySelector('#resetTerrs').addEventListener('click', () => {
 });
 
 document.querySelector('#removeTerrs').addEventListener('click', () => {
+  if (!confirm('Warning!\nThis will remove all selected territories.')) {
+    return;
+  }
   let hqRemoved = false;
   for (const selected of document.querySelectorAll('.selected')) {
     const territoryName = selected.getAttribute('data-name');
