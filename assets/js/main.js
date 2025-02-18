@@ -420,7 +420,7 @@ document.addEventListener('click', event => {
 });
 
 document.querySelector('#selectAll').addEventListener('click', () => {
-  for (const tooltip of document.querySelectorAll('.tooltip:not(.total)')) {
+  for (const tooltip of document.querySelectorAll('main .tooltip:not(.total)')) {
     tooltip.className = 'tooltip selected';
   }
   updateSelection();
@@ -429,7 +429,7 @@ document.querySelector('#selectAll').addEventListener('click', () => {
 document.querySelector('#selectNone').addEventListener('click', clearSelection);
 
 function clearSelection() {
-  for (const tooltip of document.querySelectorAll('.tooltip:not(.total)')) {
+  for (const tooltip of document.querySelectorAll('main .tooltip:not(.total)')) {
     tooltip.className = 'tooltip';
   }
   updateSelection();
