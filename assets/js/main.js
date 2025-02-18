@@ -165,7 +165,7 @@ const openEditModal = createModal('.modal-edit', () => {
   tooltips.sortTerritories();
   tooltips.updateTotal(territories, tributes);
   updateLocalStorage();
-  setTimeout(clearSelection, 100);
+  setTimeout(clearSelection, 200);
 });
 
 function editTerritories() {

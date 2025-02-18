@@ -178,7 +178,7 @@ aside ul span {
   background-color: white;
   font-size: 0.8rem;
   padding: 2px 5px;
-  transition: background-color 0.1s ease;
+  transition: background-color 0.1s;
 }
 
 aside li:hover {
@@ -253,6 +253,7 @@ main {
 
 main .tooltip {
   margin: 10px;
+  transition: background-color 0.1s, opacity 0.1s;
   width: 260px;
 }
 
@@ -280,7 +281,7 @@ main .selected {
 }
 
 .modal-wrapper.fade-in {
-  animation: 0.4s ease fade-in;
+  animation: 0.4s fade-in;
 }
 
 @keyframes fade-in {
@@ -293,7 +294,7 @@ main .selected {
 }
 
 .modal-wrapper.fade-out {
-  animation: 0.4s ease fade-out;
+  animation: 0.4s fade-out;
 }
 
 @keyframes fade-out {
@@ -389,6 +390,7 @@ main .selected {
 .modal .upgrades li .tooltip {
   margin-left: 10px;
   opacity: 0;
+  pointer-events: none;
   position: absolute;
   transition: opacity 0.1s;
   visibility: hidden;
@@ -397,7 +399,7 @@ main .selected {
 }
 
 .modal .upgrades li:hover .tooltip {
-  opacity: 1;
+  opacity: 0.9;
   visibility: visible;
 }
 
