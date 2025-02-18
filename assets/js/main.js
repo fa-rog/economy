@@ -170,7 +170,7 @@ const openEditModal = createModal('.modal-edit', () => {
 
 function editTerritories() {
   const selectedTerritories = [...document.querySelectorAll('.selected')];
-  const upgradeSpans = document.querySelectorAll('.modal .upgrades span');
+  const upgradeSpans = document.querySelectorAll('.modal .upgrades li > span');
   const upgradeTooltips = document.querySelectorAll('.modal .upgrades .tooltip');
   for (const [index, upgrade] of Object.keys(upgradeData).entries()) {
     const level = Math.min(...selectedTerritories.map(selected => {
@@ -348,17 +348,18 @@ function updateHqDistances() {
 function setStorages() {
   for (const selected of document.querySelectorAll('.selected')) {
     const territory = territories[selected.getAttribute('data-name')];
-    if (territory.name !== hq) {
+    const isHq = territory.name === hq;
+    if (!isHq) {
       territory.upgrades.emeraldStorage = 0;
       territory.upgrades.resourceStorage = 0;
     }
     const minEms = Math.round((territory.costs.emeralds + territory.production.emeralds) / 60);
     const minRes = Math.max(...['ore', 'wood', 'fish', 'crops']
         .map(res => Math.round((territory.costs[res] + territory.production[res]) / 60)));
-    while (3000 * upgradeData.emeraldStorage.effects[territory.upgrades.emeraldStorage] < minEms) {
+    while ((isHq ? 5000 : 3000) * upgradeData.emeraldStorage.effects[territory.upgrades.emeraldStorage] < minEms) {
       territory.upgrades.emeraldStorage++;
     }
-    while (300 * upgradeData.resourceStorage.effects[territory.upgrades.resourceStorage] < minRes) {
+    while ((isHq ? 1500 : 300) * upgradeData.resourceStorage.effects[territory.upgrades.resourceStorage] < minRes) {
       territory.upgrades.resourceStorage++;
     }
     tooltips.updateTerritory(territory);
