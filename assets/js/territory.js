@@ -20,27 +20,11 @@ export class Territory {
   }
 
   get difficulty() {
-    let upgradeNumber = ['damage', 'attack', 'health', 'defence', 'aura', 'volley']
+    let num = ['damage', 'attack', 'health', 'defence', 'aura', 'volley']
         .map(upgrade => this.upgrades[upgrade]).reduce((sum, value) => sum + value, 0);
-    if (this.upgrades['aura'] > 0) {
-      upgradeNumber += 5;
-    }
-    if (this.upgrades['volley'] > 0) {
-      upgradeNumber += 3;
-    }
-    if (upgradeNumber >= 49 || this.distanceToHq === 0) {
-      return 'Very High';
-    }
-    if (upgradeNumber >= 31) {
-      return 'High';
-    }
-    if (upgradeNumber >= 19) {
-      return 'Medium';
-    }
-    if (upgradeNumber >= 6) {
-      return 'Low';
-    }
-    return 'Very Low';
+    num += 5 * (this.upgrades['aura'] > 0) + 3 * (this.upgrades['volley'] > 0);
+    const tier = (num >= 6) + (num >= 19) + (num >= 31) + (num >= 49) + (this.distanceToHq === 0);
+    return ['Very Low', 'Low', 'Medium', 'High', 'Very High'][Math.min(tier, 4)];
   }
 
   setBaseTreasury(value) {
