@@ -380,7 +380,7 @@ export default {
             "emeralds": 18000, "ore": 0, "wood": 0, "fish": 3600, "crops": 0
         }
     }, "Corkus City Crossroads": {
-        "connections": ["Corkus City", "Corkus Forest", "Fallen Factory", "Industrial Clearing", "Picnic Pond", "Road to Mine"],
+        "connections": ["Corkus City", "Corkus Forest", "Fallen Factory", "Industrial Clearing", "Road to Mine"],
         "resources": {
             "emeralds": 9000, "ore": 0, "wood": 0, "fish": 3600, "crops": 0
         }
@@ -1445,7 +1445,7 @@ export default {
             "emeralds": 9000, "ore": 3600, "wood": 0, "fish": 0, "crops": 0
         }
     }, "Picnic Pond": {
-        "connections": ["Avos Territory", "Corkus City", "Corkus City Crossroads", "Corkus Forest"],
+        "connections": ["Avos Territory", "Corkus City", "Corkus Forest"],
         "resources": {
             "emeralds": 9000, "ore": 0, "wood": 3600, "fish": 0, "crops": 0
         }
