@@ -364,6 +364,9 @@ function setStorages() {
     }
     tooltips.updateTerritory(territory);
   }
+  tooltips.sortTerritories();
+  tooltips.updateTotal(territories, tributes);
+  updateLocalStorage();
   clearSelection();
 }
 document.querySelector('#setStorages').addEventListener('click', setStorages);
