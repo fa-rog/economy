@@ -12,7 +12,7 @@ const colors = {
   'High': 'red',
   'Very High': 'red',
 };
-const mainElement = document.querySelector('main');
+const cardsElement = document.querySelector('#cards');
 const resources = ['emeralds', 'ore', 'wood', 'fish', 'crops'];
 
 export function init() {
@@ -38,7 +38,7 @@ export function init() {
   const costSection = document.createElement('section');
   costSection.setAttribute('data-type', 'costs');
   tooltip.appendChild(costSection);
-  mainElement.replaceChildren(tooltip);
+  cardsElement.replaceChildren(tooltip);
 }
 
 export function updateTotal(territories, tributes) {
@@ -105,7 +105,38 @@ export function addTerritory(territory) {
   const tooltip = document.createElement('div');
   tooltip.className = 'tooltip';
   tooltip.setAttribute('data-name', territory.name);
-  tooltip.appendChild(document.createElement('h4'));
+  createTerritorySections(tooltip);
+  cardsElement.appendChild(tooltip);
+  updateTerritory(territory);
+  return tooltip;
+}
+
+export function renderTerritoryDetails(territory, element) {
+  createTerritorySections(element);
+  updateTerritory(territory, element);
+}
+
+export function renderBaseTerritoryDetails(name, data, hqDistance, element) {
+  const title = document.createElement('h4');
+  title.innerText = name;
+  const lines = [];
+  for (const [resource, production] of Object.entries(data.resources)) {
+    if (production > 0) {
+      const line = createResourceImageLine(resource);
+      line.appendChild(createSpan(`+${production} ${capitalize(resource)} per Hour`, colors[resource]));
+      lines.push(line);
+    }
+  }
+  const attackTimer = document.createElement('p');
+  attackTimer.appendChild(createSpan('Attack Timer: ', 'light-purple'));
+  const timer = typeof hqDistance === 'number' ? `${hqDistance + 1} min` : hqDistance ?? 'No HQ set';
+  attackTimer.appendChild(createSpan(timer, 'gray'));
+  element.replaceChildren(title, createSpan('Not managed', 'gray'), document.createElement('br'),
+      document.createElement('br'), ...lines, document.createElement('br'), attackTimer);
+}
+
+function createTerritorySections(tooltip) {
+  tooltip.replaceChildren(document.createElement('h4'));
   tooltip.appendChild(document.createElement('br'));
   const productionSection = document.createElement('section');
   productionSection.setAttribute('data-type', 'production');
@@ -118,13 +149,14 @@ export function addTerritory(territory) {
   const statsSection = document.createElement('section');
   statsSection.setAttribute('data-type', 'stats');
   tooltip.appendChild(statsSection);
-  mainElement.appendChild(tooltip);
-  updateTerritory(territory);
-  return tooltip;
+}
+
+function cardOf(territoryName) {
+  return cardsElement.querySelector(`[data-name="${territoryName}"]`);
 }
 
 export function removeTerritory(territoryName) {
-  document.querySelector(`[data-name="${territoryName}"]`).remove();
+  cardOf(territoryName).remove();
 }
 
 function capitalize(word) {
@@ -161,13 +193,13 @@ function createResourceImageLine(resource) {
   return line;
 }
 
-export function updateTerritory(territory) {
-  updateTerritoryProduction(territory);
-  updateTerritoryUpgrades(territory);
-  updateTerritoryStats(territory);
+export function updateTerritory(territory, root = cardOf(territory.name)) {
+  updateTerritoryProduction(territory, root);
+  updateTerritoryUpgrades(territory, root);
+  updateTerritoryStats(territory, root);
 }
 
-export function updateTerritoryProduction(territory) {
+export function updateTerritoryProduction(territory, root = cardOf(territory.name)) {
   const lines = [];
   for (const [resource, production] of Object.entries(territory.production)) {
     const color = colors[resource];
@@ -195,11 +227,11 @@ export function updateTerritoryProduction(territory) {
     treasuryLine.appendChild(createSpan(`${round(100 * (territory.treasuryBonus - 1), 2)}%`));
     lines.push(treasuryLine);
   }
-  document.querySelector(`[data-name="${territory.name}"] [data-type="production"]`)
+  root.querySelector('[data-type="production"]')
       .replaceChildren(...lines);
 }
 
-function updateTerritoryUpgrades(territory) {
+function updateTerritoryUpgrades(territory, root) {
   const lines = [];
   if (Object.values(territory.upgrades).some(value => value > 0)) {
     const heading = document.createElement('p');
@@ -219,12 +251,12 @@ function updateTerritoryUpgrades(territory) {
     text.appendChild(createSpan('No upgrades active', 'gray'));
     lines.push(text);
   }
-  document.querySelector(`[data-name="${territory.name}"] [data-type="upgrades"]`)
+  root.querySelector('[data-type="upgrades"]')
       .replaceChildren(...lines);
 }
 
-export function updateTerritoryStats(territory) {
-  const title = document.querySelector(`[data-name="${territory.name}"] h4`);
+export function updateTerritoryStats(territory, root = cardOf(territory.name)) {
+  const title = root.querySelector('h4');
   title.innerText = territory.name;
   if (territory.distanceToHq === 0) {
     title.innerText += ' (HQ)';
@@ -261,17 +293,17 @@ export function updateTerritoryStats(territory) {
   defenceLine.appendChild(createSpan('- ', 'light-purple'));
   defenceLine.appendChild(createSpan(`Defence: ${defence.toFixed(1)}%`, 'gray'));
   lines.push(defenceLine);
-  document.querySelector(`[data-name="${territory.name}"] [data-type="stats"]`)
+  root.querySelector('[data-type="stats"]')
       .replaceChildren(...lines);
 }
 
 export function sortTerritories() {
-  Array.from(mainElement.querySelectorAll('.tooltip:not(.total)'))
+  Array.from(cardsElement.querySelectorAll('.tooltip:not(.total)'))
       .sort((...tooltips) => tooltips
           .map(tooltip => tooltip.innerText.includes('HQ') ? 100 :
               tooltip.querySelectorAll('[data-type="upgrades"] p').length)
           .reduce((first, second) => second - first))
-      .forEach(tooltip => mainElement.appendChild(tooltip));
+      .forEach(tooltip => cardsElement.appendChild(tooltip));
 }
 
 export function updateUpgrade(tooltip, upgrade, level) {

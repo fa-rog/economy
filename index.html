@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <link href="assets/img/icon.png" rel="icon" type="image/png">
+<link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
 <link href="style.css" rel="stylesheet">
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <script defer src="assets/js/main.js" type="module"></script>
 <title>Economy</title>
 <aside>
+  <br>
+  <h3>View</h3>
+  <hr>
+  <div class="view-switch">
+    <button id="viewCards">Cards</button>
+    <button id="viewMap">Map</button>
+  </div>
   <br>
   <h3>Territories</h3>
   <hr>
@@ -72,11 +80,14 @@
   </footer>
 </aside>
 <main>
-  <div class="tooltip total">
-    <h4>Loading...</h4>
-    <br>
-    <span class="gray">Please wait a second.</span>
+  <div id="cards">
+    <div class="tooltip total">
+      <h4>Loading...</h4>
+      <br>
+      <span class="gray">Please wait a second.</span>
+    </div>
   </div>
+  <div id="map"></div>
 </main>
 <div class="modal-wrapper modal-edit">
   <div class="modal">
@@ -159,7 +170,8 @@
           functionality for sharing
         <li><a href="https://aviciaguild.github.io/resource-updater/" target="_blank">Avicia's Resource Updater</a>
           (newracket): General inspiration and design of territory upgrade menu
-        <li><a href="https://wynndata.tk" target="_blank">Wynndata</a> (dukioooo): Territory box design
+        <li>Wynndata (dukioooo): Territory box design
+        <li><a href="https://github.com/Wynntils/Static-Storage" target="_blank">Wynntils</a>: Map images
       </ul>
     </section>
   </div>

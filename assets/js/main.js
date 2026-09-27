@@ -2,6 +2,7 @@ import territoryData from '../data/territories.js';
 import upgradeData from '../data/upgrades.js';
 import {Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
+import * as map from './map.js';
 
 const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfbWGLN_F97T7VWs9rSgHnozfHQOb2SUrM1qxzj7iSHuIST_/exec';
 
@@ -28,6 +29,7 @@ let hq = null;
 const hqDistances = {};
 const territories = {};
 const tributes = {'emeralds': 0, 'ore': 0, 'wood': 0, 'fish': 0, 'crops': 0};
+const selection = new Set();
 
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('id')) {
@@ -45,27 +47,32 @@ if (urlParams.has('id')) {
 }
 
 createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => {
-  let counter = 0;
   const guildPrefix = guild.split('[')[1].split(']')[0];
-  for (const territory of Object.values(apiData)) {
-    if (territory['guildPrefix'] + '' === guildPrefix && !(territory['territory'] in territories)) {
-      addTerritory(territory['territory']);
-      counter++;
-    }
-  }
-  tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
-  updateLocalStorage();
-  return `Added ${counter}!`;
+  const territoryNames = Object.values(apiData)
+      .filter(territory => territory['guildPrefix'] + '' === guildPrefix && !(territory['territory'] in territories))
+      .map(territory => territory['territory']);
+  addTerritories(territoryNames);
+  return `Added ${territoryNames.length}!`;
 });
 
 createInputMenu('#addTerritory', '#addTerritoryResults', availableTerritories, territoryName => {
-  addTerritory(territoryName);
-  tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
-  updateLocalStorage();
+  addTerritories([territoryName]);
   return 'Added!';
 });
+
+function addTerritories(territoryNames) {
+  for (const territoryName of territoryNames) {
+    addTerritory(territoryName);
+  }
+  tooltips.sortTerritories();
+  updateTotal();
+  updateLocalStorage();
+}
+
+function updateTotal() {
+  tooltips.updateTotal(territories, tributes);
+  map.refresh();
+}
 
 function createInputMenu(inputTag, resultListTag, items, callback) {
   const input = document.querySelector(inputTag);
@@ -134,15 +141,8 @@ function addTerritory(territoryName, baseTreasury = null) {
       territoryName in apiData ? apiData[territoryName]['acquired'] : null,
       hqDistances[territoryName], baseTreasury);
   const territoryBox = tooltips.addTerritory(territories[territoryName]);
-  territoryBox.addEventListener('click', event => {
-    event.currentTarget.classList.toggle('selected');
-    updateSelection();
-  });
-  territoryBox.addEventListener('dblclick', event => {
-    event.currentTarget.classList.add('selected');
-    updateSelection();
-    editTerritories();
-  });
+  territoryBox.addEventListener('click', () => toggleSelected(territoryName));
+  territoryBox.addEventListener('dblclick', () => editTerritory(territoryName));
   if (hq === null) {
     setHq(territoryName);
   } else if (hqDistances[territoryName] <= 3) {
@@ -158,24 +158,27 @@ function addTerritory(territoryName, baseTreasury = null) {
 }
 
 const openEditModal = createModal('.modal-edit', () => {
-  for (const selected of document.querySelectorAll('.selected')) {
-    const territory = territories[selected.getAttribute('data-name')];
+  for (const territory of getSelected()) {
     tooltips.updateTerritory(territory);
   }
   tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
   updateLocalStorage();
   setTimeout(clearSelection, 200);
 });
 
+function editTerritory(territoryName) {
+  selection.add(territoryName);
+  renderSelection();
+  editTerritories();
+}
+
 function editTerritories() {
-  const selectedTerritories = [...document.querySelectorAll('.selected')];
+  const selectedTerritories = getSelected();
   const upgradeSpans = document.querySelectorAll('.modal .upgrades li > span');
   const upgradeTooltips = document.querySelectorAll('.modal .upgrades .tooltip');
   for (const [index, upgrade] of Object.keys(upgradeData).entries()) {
-    const level = Math.min(...selectedTerritories.map(selected => {
-      return territories[selected.getAttribute('data-name')].upgrades[upgrade];
-    }));
+    const level = Math.min(...selectedTerritories.map(territory => territory.upgrades[upgrade]));
     upgradeSpans[index].innerText = level;
     tooltips.updateUpgrade(upgradeTooltips[index], upgrade, level);
   }
@@ -201,8 +204,7 @@ for (const item of document.querySelectorAll('.modal .upgrades li')) {
     }
     span.innerText = upgradeValue;
     tooltips.updateUpgrade(item.querySelector('.tooltip'), upgrade, upgradeValue);
-    for (const selected of document.querySelectorAll('.selected')) {
-      const territory = territories[selected.getAttribute('data-name')];
+    for (const territory of getSelected()) {
       territory.upgrades[upgrade] = upgradeValue;
       territory.update();
     }
@@ -238,8 +240,7 @@ document.querySelector('#resetTerrs').addEventListener('click', () => {
   if (!confirm('Warning!\nThis will reset the upgrades for all selected territories.')) {
     return;
   }
-  for (const selected of document.querySelectorAll('.selected')) {
-    const territory = territories[selected.getAttribute('data-name')];
+  for (const territory of getSelected()) {
     for (const upgrade of Object.keys(territory.upgrades)) {
       territory.upgrades[upgrade] = 0;
     }
@@ -247,7 +248,7 @@ document.querySelector('#resetTerrs').addEventListener('click', () => {
     tooltips.updateTerritory(territory);
   }
   tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
   updateLocalStorage();
   clearSelection();
 });
@@ -257,8 +258,7 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
     return;
   }
   let hqRemoved = false;
-  for (const selected of document.querySelectorAll('.selected')) {
-    const territoryName = selected.getAttribute('data-name');
+  for (const territoryName of selection) {
     delete territories[territoryName];
     tooltips.removeTerritory(territoryName);
     availableTerritories.push(territoryName);
@@ -283,9 +283,10 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
       setHq(null);
     }
   }
-  tooltips.updateTotal(territories, tributes);
+  selection.clear();
+  renderSelection();
+  updateTotal();
   updateLocalStorage();
-  updateSelection();
 });
 
 const openTributeModal = createModal('.modal-tributes', () => {
@@ -293,12 +294,12 @@ const openTributeModal = createModal('.modal-tributes', () => {
     tributes[resource] = +document.querySelector(`#${resource}Tributes`).value;
   }
   localStorage.setItem('tributes', JSON.stringify(tributes));
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
 });
 document.querySelector('#tributes').addEventListener('click', openTributeModal);
 
 document.querySelector('#setHq').addEventListener('click', () => {
-  setHq(document.querySelector('.selected').getAttribute('data-name'));
+  setHq([...selection][0]);
   clearSelection();
 });
 
@@ -325,7 +326,7 @@ function setHq(territoryName) {
     tooltips.updateTerritoryStats(territory);
   }
   tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
 }
 
 function updateHqDistances() {
@@ -346,8 +347,7 @@ function updateHqDistances() {
 }
 
 function setStorages() {
-  for (const selected of document.querySelectorAll('.selected')) {
-    const territory = territories[selected.getAttribute('data-name')];
+  for (const territory of getSelected()) {
     const isHq = territory.name === hq;
     if (!isHq) {
       territory.upgrades.emeraldStorage = 0;
@@ -365,7 +365,7 @@ function setStorages() {
     tooltips.updateTerritory(territory);
   }
   tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
   updateLocalStorage();
   clearSelection();
 }
@@ -386,7 +386,7 @@ createTreasuryMenu('#globalTreasury', '#globalTreasuryOptions', treasuryValue =>
   setTreasury(territories, treasuryValue);
 });
 createTreasuryMenu('#selectedTreasury', '#selectedTreasuryOptions', treasuryValue => {
-  setTreasury(document.querySelectorAll('.selected'), treasuryValue);
+  setTreasury(getSelected(), treasuryValue);
 });
 
 function createTreasuryMenu(buttonTag, optionListTag, callback) {
@@ -405,13 +405,12 @@ function createTreasuryMenu(buttonTag, optionListTag, callback) {
 }
 
 function setTreasury(items, value = null) {
-  for (const item of Object.values(items)) {
-    const territory = item instanceof Element ? territories[item.getAttribute('data-name')] : item;
+  for (const territory of Object.values(items)) {
     territory.setBaseTreasury(value);
     territory.updateProduction();
     tooltips.updateTerritoryProduction(territory);
   }
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
   updateLocalStorage();
 }
 
@@ -424,23 +423,34 @@ document.addEventListener('click', event => {
 });
 
 document.querySelector('#selectAll').addEventListener('click', () => {
-  for (const tooltip of document.querySelectorAll('main .tooltip:not(.total)')) {
-    tooltip.className = 'tooltip selected';
-  }
-  updateSelection();
+  Object.keys(territories).forEach(territoryName => selection.add(territoryName));
+  renderSelection();
 });
 
 document.querySelector('#selectNone').addEventListener('click', clearSelection);
 
-function clearSelection() {
-  for (const tooltip of document.querySelectorAll('main .tooltip:not(.total)')) {
-    tooltip.className = 'tooltip';
-  }
-  updateSelection();
+function getSelected() {
+  return [...selection].map(territoryName => territories[territoryName]);
 }
 
-function updateSelection() {
-  const amount = document.querySelectorAll('.selected').length;
+function toggleSelected(territoryName) {
+  if (!selection.delete(territoryName)) {
+    selection.add(territoryName);
+  }
+  renderSelection();
+}
+
+function clearSelection() {
+  selection.clear();
+  renderSelection();
+}
+
+function renderSelection() {
+  for (const card of document.querySelectorAll('#cards .tooltip:not(.total)')) {
+    card.classList.toggle('selected', selection.has(card.getAttribute('data-name')));
+  }
+  map.refresh();
+  const amount = selection.size;
   for (const element of document.querySelectorAll('[data-value=selection]')) {
     element.innerText = amount > 0 ? `(${amount})` : '';
   }
@@ -514,6 +524,7 @@ function fromJSON(saveObject) {
     availableTerritories.push(territoryName);
   }
   availableTerritories.sort();
+  clearSelection();
   tooltips.init();
   setHq(null);
   for (const [territoryName, territoryData] of Object.entries(saveObject.territories)) {
@@ -533,7 +544,7 @@ function fromJSON(saveObject) {
     tooltips.updateTerritory(territory);
   }
   tooltips.sortTerritories();
-  tooltips.updateTotal(territories, tributes);
+  updateTotal();
   updateLocalStorage();
 }
 
@@ -553,3 +564,32 @@ document.querySelector('#clear').addEventListener('click', () => {
 });
 
 document.querySelector('aside footer span').addEventListener('click', createModal('.modal-credit'));
+
+const mapCallbacks = {
+  getTerritory: territoryName => territories[territoryName],
+  isSelected: territoryName => selection.has(territoryName),
+  getHq: () => hq,
+  getHqDistance: territoryName => hq === null ? null : hqDistances[territoryName] ?? 'Not connected',
+  onToggleSelect: toggleSelected,
+  onEdit: editTerritory,
+  onAdd: territoryName => addTerritories([territoryName]),
+};
+
+function setView(view) {
+  document.body.classList.toggle('map-mode', view === 'map');
+  document.querySelector('#viewCards').classList.toggle('current', view !== 'map');
+  document.querySelector('#viewMap').classList.toggle('current', view === 'map');
+  localStorage.setItem('view', view);
+  if (view === 'map') {
+    map.initMap(document.querySelector('#map'), mapCallbacks);
+  }
+}
+
+document.querySelector('#viewCards').addEventListener('click', () => setView('cards'));
+document.querySelector('#viewMap').addEventListener('click', () => setView('map'));
+document.querySelector('#cards').addEventListener('click', event => {
+  if (event.target.closest('.total h4')) {
+    event.target.closest('.total').classList.toggle('collapsed');
+  }
+});
+setView(localStorage.getItem('view') ?? 'cards');

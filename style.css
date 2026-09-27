@@ -75,7 +75,7 @@ body {
 }
 
 [hidden] {
-  display: none;
+  display: none !important;
 }
 
 /* Minecraft-like tooltips */
@@ -229,6 +229,25 @@ aside input:focus::placeholder {
   opacity: 0;
 }
 
+aside .view-switch {
+  display: flex;
+  gap: 5%;
+  margin: 0 auto;
+  width: 90%;
+}
+
+aside .view-switch button {
+  margin: 5px 0;
+  width: 50%;
+}
+
+aside .view-switch button.current,
+aside .view-switch button.current:hover {
+  background-color: #4e7564;
+  color: #fffacd;
+  cursor: default;
+}
+
 aside footer {
   text-align: center;
 }
@@ -243,25 +262,29 @@ aside footer span {
 
 main {
   box-sizing: border-box;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   margin-left: 15%;
-  padding: 10px;
   width: 85%;
 }
 
-main .tooltip {
+#cards {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px;
+}
+
+#cards .tooltip {
   margin: 10px;
   transition: background-color 0.1s, opacity 0.1s;
   width: 260px;
 }
 
-main .tooltip:not(.total) {
+#cards .tooltip:not(.total) {
   cursor: pointer;
 }
 
-main .selected {
+#cards .selected {
   background-color: #222;
   border-color: #222;
   opacity: 0.9;
@@ -278,6 +301,7 @@ main .selected {
   position: fixed;
   top: 0;
   width: 100%;
+  z-index: 2;
 }
 
 .modal-wrapper.fade-in {
@@ -431,4 +455,170 @@ main .selected {
 .modal a, .modal a:visited {
   color: #00e;
   text-decoration: none;
+}
+
+/* Map view */
+
+#map {
+  display: none;
+}
+
+body.map-mode main {
+  height: 100vh;
+  position: relative;
+}
+
+body.map-mode #map {
+  background-color: #2b251c;
+  display: block;
+  font: inherit;
+  height: 100%;
+  isolation: isolate;
+  line-height: 1.3;
+}
+
+body.map-mode #cards {
+  display: block;
+  padding: 0;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 1;
+}
+
+body.map-mode #cards > .tooltip:not(.total) {
+  display: none;
+}
+
+body.map-mode #cards .total {
+  margin: 0;
+  opacity: 0.9;
+}
+
+body.map-mode #cards .total h4 {
+  cursor: pointer;
+}
+
+body.map-mode #cards .total h4::after {
+  color: #aaa;
+  content: ' ▴';
+}
+
+body.map-mode #cards .total.collapsed h4::after {
+  content: ' ▾';
+}
+
+body.map-mode #cards .total.collapsed > :not(h4) {
+  display: none;
+}
+
+#map .map-image {
+  image-rendering: pixelated;
+}
+
+#map .map-patterns {
+  position: absolute;
+}
+
+#map .leaflet-bar {
+  border: none;
+  box-shadow: 0 0 4px #0008;
+}
+
+#map .leaflet-bar a {
+  background-color: #67917f;
+  border-bottom-color: #1d1905;
+  color: #1d1905;
+}
+
+#map .leaflet-bar a:hover {
+  background-color: #bbb;
+}
+
+#map .leaflet-bar a.leaflet-disabled {
+  background-color: #77a18f;
+  opacity: 0.7;
+}
+
+#map .map-hover {
+  opacity: 0.95;
+  pointer-events: none;
+  position: absolute;
+  width: 260px;
+  z-index: 1000;
+}
+
+#map .map-legend {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+#map .map-legend .swatch {
+  border: 1px solid black;
+  display: inline-block;
+  height: 10px;
+  margin: 0 4px 0 6px;
+  vertical-align: middle;
+  width: 10px;
+}
+
+#map .map-legend .swatch.outline {
+  border-width: 2px;
+  height: 8px;
+  width: 8px;
+}
+
+#map .map-legend p:first-child .swatch:first-child,
+#map .map-legend p:nth-child(2) .swatch:first-child {
+  margin-left: 0;
+}
+
+#map .territory-label {
+  color: #ddd;
+  font-size: 11px;
+  left: 0;
+  line-height: 1.2;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  text-shadow: 1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black;
+  top: 0;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+#map .territory-label.managed {
+  color: white;
+  font-weight: 700;
+}
+
+#map .territory-label.selected .label-name {
+  color: #f5f;
+}
+
+#map .territory-label img {
+  vertical-align: middle;
+}
+
+#map .label-hq {
+  color: #fa0;
+  font-size: 16px;
+}
+
+#map.zoom-far .territory-label > :not(.label-hq),
+#map.zoom-mid .label-name,
+#map.zoom-mid .label-stats {
+  display: none;
+}
+
+#map .label-icons {
+  align-items: center;
+  background-color: black;
+  border-radius: 3px;
+  display: inline-flex;
+  padding: 1px 2px;
+}
+
+#map .label-icons img {
+  display: block;
 }
