@@ -1,29 +1,34 @@
 import territoryData from '../data/territories.js';
 import upgradeData from '../data/upgrades.js';
-import {Territory} from './territory.js';
+import {baseTreasuryFor, Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 import * as map from './map.js';
 
 const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfbWGLN_F97T7VWs9rSgHnozfHQOb2SUrM1qxzj7iSHuIST_/exec';
 
-let apiData;
+let apiData = {};
 const guilds = [];
-try {
-  const response = await fetch('https://wynnmap.zatzou.com/api/v3/terr/state');
-  if (!response.ok) {
-    throw new Error(`Response status: ${response.status}`);
-  }
+fetch('https://wynnmap.zatzou.com/api/v3/terr/state', {signal: AbortSignal.timeout(5000)})
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(json => {
+      apiData = json['terrs'];
+      const guildNames = Object.values(apiData)
+          .filter(territory => territory['guild']['uuid'] !== null)
+          .map(territory => `${territory['guild']['name']} [${territory['guild']['prefix']}]`);
+      guilds.push(...new Set(guildNames));
+      guilds.sort();
+      document.querySelector('#loadTerritories').disabled = false;
+      document.querySelector('#loadTreasury').disabled = false;
+    })
+    .catch(error => console.error('Live territory data could not be loaded', error));
 
-  apiData = (await response.json())['terrs'];
-  const guildNames = Object.values(apiData)
-      .filter(territory => territory['guild']['uuid'] !== null)
-      .map(territory => `${territory['guild']['name']} [${territory['guild']['prefix']}]`);
-  guilds.push(...new Set(guildNames));
-  guilds.sort();
-} catch (error) {
-  document.querySelector('#loadTerritories').disabled = true;
-  document.querySelector('#loadTreasury').disabled = true;
-  apiData = Object.fromEntries(Object.keys(territoryData).map(name => [name, {acquired: null}]));
+function currentBaseTreasury(territoryName) {
+  return baseTreasuryFor(apiData[territoryName]?.['acquired'] ?? null);
 }
 
 const availableTerritories = Object.keys(territoryData);
@@ -37,14 +42,38 @@ const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('id')) {
   fetch(`${shareUrl}?id=${urlParams.get('id')}`)
     .then(response => response.json())
-    .then(data => fromJSON(data));
+    .then(data => {
+      if (data !== null && (!hasSavedTerritories() ||
+          confirm('Load the shared setup?\nThis replaces the setup currently saved in your browser.'))) {
+        fromJSON(data);
+      } else {
+        loadSavedData();
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      alert('The shared setup could not be loaded.');
+      loadSavedData();
+    });
   window.history.replaceState({}, document.title, window.location.href.split('?')[0]);
 } else {
+  loadSavedData();
+}
+
+function loadSavedData() {
   try {
-      loadFromLocalStorage();
+    loadFromLocalStorage();
   } catch (error) {
-      localStorage.clear();
-      location.reload();
+    console.error(error);
+    alert('Your saved data could not be loaded completely.');
+  }
+}
+
+function hasSavedTerritories() {
+  try {
+    return Object.keys(JSON.parse(localStorage.getItem('territories')) ?? {}).length > 0;
+  } catch (error) {
+    return false;
   }
 }
 
@@ -118,7 +147,8 @@ function createMatchingList(items, input) {
   let amount = 0;
   const addedItems = [];
   const lines = [];
-  for (const regExp of [new RegExp(`^${input}`, 'i'), new RegExp(input, 'i')]) {
+  const escapedInput = input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const regExp of [new RegExp(`^${escapedInput}`, 'i'), new RegExp(escapedInput, 'i')]) {
     for (const item of items) {
       if (item.match(regExp) && !addedItems.includes(item)) {
         if (amount++ >= 12) {
@@ -142,16 +172,14 @@ function addTerritory(territoryName, baseTreasury = null) {
   territories[territoryName] = new Territory(territoryName,
       territoryData[territoryName].connections.filter(conn => conn in territories).length,
       territoryData[territoryName]['resources'],
-      territoryName in apiData ? apiData[territoryName]['acquired'] : null,
-      hqDistances[territoryName], baseTreasury);
+      hqDistances[territoryName], baseTreasury ?? currentBaseTreasury(territoryName));
   const territoryBox = tooltips.addTerritory(territories[territoryName]);
   territoryBox.addEventListener('click', () => toggleSelected(territoryName));
   territoryBox.addEventListener('dblclick', () => editTerritory(territoryName));
   if (hq === null) {
     setHq(territoryName);
   } else if (hqDistances[territoryName] <= 3) {
-    territories[hq].hqBonus += 0.25;
-    tooltips.updateTerritoryStats(territories[hq]);
+    updateHqBonus();
   }
   for (const connection of territoryData[territoryName].connections) {
     if (connection in territories) {
@@ -268,9 +296,6 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
     availableTerritories.push(territoryName);
     if (territoryName === hq) {
       hqRemoved = true;
-    } else if (hqDistances[territoryName] <= 3 && !hqRemoved) {
-      territories[hq].hqBonus -= 0.25;
-      tooltips.updateTerritoryStats(territories[hq]);
     }
     for (const connection of territoryData[territoryName].connections) {
       if (connection in territories) {
@@ -286,6 +311,8 @@ document.querySelector('#removeTerrs').addEventListener('click', () => {
     } else {
       setHq(null);
     }
+  } else if (hq !== null) {
+    updateHqBonus();
   }
   selection.clear();
   renderSelection();
@@ -308,29 +335,40 @@ document.querySelector('#setHq').addEventListener('click', () => {
 });
 
 function setHq(territoryName) {
+  if (hq in territories) {
+    territories[hq].hqBonus = 1;
+  }
   if (territoryName == null) {
     hq = null;
+    for (const key of Object.keys(hqDistances)) {
+      delete hqDistances[key];
+    }
     localStorage.removeItem('hq');
     return;
   }
-  const oldHq = hq;
   hq = territoryName;
   localStorage.setItem('hq', hq);
   updateHqDistances();
-  const centralTerrs = Object.values(territories).filter(terr => terr.distanceToHq <= 3).length;
-  territories[hq].hqBonus = 1.25 + 0.25 * centralTerrs;
-  if (oldHq in territories) {
-    territories[oldHq].hqBonus = 1;
-  }
   for (const territory of Object.values(territories)) {
     territory.distanceToHq = hqDistances[territory.name];
     territory.updateTreasury();
     territory.updateProduction();
+  }
+  updateHqBonus();
+  for (const territory of Object.values(territories)) {
     tooltips.updateTerritoryProduction(territory);
     tooltips.updateTerritoryStats(territory);
   }
   tooltips.sortTerritories();
   updateTotal();
+}
+
+// HQ stats are multiplied by (1.5 + 0.25 * externals), externals being owned territories within 3 connections
+function updateHqBonus() {
+  const externals = Object.values(territories)
+      .filter(territory => territory.distanceToHq > 0 && territory.distanceToHq <= 3).length;
+  territories[hq].hqBonus = 1.5 + 0.25 * externals;
+  tooltips.updateTerritoryStats(territories[hq]);
 }
 
 function updateHqDistances() {
@@ -410,7 +448,7 @@ function createTreasuryMenu(buttonTag, optionListTag, callback) {
 
 function setTreasury(items, value = null) {
   for (const territory of Object.values(items)) {
-    territory.setBaseTreasury(value);
+    territory.setBaseTreasury(value ?? currentBaseTreasury(territory.name));
     territory.updateProduction();
     tooltips.updateTerritoryProduction(territory);
   }
@@ -510,7 +548,12 @@ fileInput.addEventListener('change', () => {
   const reader = new FileReader();
   reader.addEventListener('load', () => {
     if (typeof reader.result === 'string') {
-      fromJSON(JSON.parse(reader.result));
+      try {
+        fromJSON(JSON.parse(reader.result));
+      } catch (error) {
+        console.error(error);
+        alert('The file could not be imported.');
+      }
     }
   });
   reader.readAsText(fileInput.files[0]);
@@ -531,17 +574,29 @@ function fromJSON(saveObject) {
   clearSelection();
   tooltips.init();
   setHq(null);
-  for (const [territoryName, territoryData] of Object.entries(saveObject.territories)) {
-    addTerritory(territoryName, territoryData.treasury);
-    for (const [upgradeName, upgradeValue] of Object.entries(territoryData.upgrades)) {
-      territories[territoryName].upgrades[upgradeName] = upgradeValue;
+  const unknownTerritories = [];
+  for (const [territoryName, savedTerritory] of Object.entries(saveObject.territories ?? {})) {
+    if (!(territoryName in territoryData)) {
+      unknownTerritories.push(territoryName);
+      continue;
+    }
+    addTerritory(territoryName, savedTerritory.treasury ?? null);
+    for (const [upgradeName, upgradeValue] of Object.entries(savedTerritory.upgrades ?? {})) {
+      if (upgradeName in upgradeData) {
+        const maxLevel = upgradeData[upgradeName].effects.length - 1;
+        territories[territoryName].upgrades[upgradeName] = Math.max(0, Math.min(upgradeValue, maxLevel));
+      }
     }
     territories[territoryName].update();
   }
-  setHq(saveObject.hq);
-  Object.entries(saveObject.tributes).forEach(([resource, amount]) => {
-    tributes[resource] = amount;
-    document.querySelector(`#${resource}Tributes`).value = amount;
+  if (saveObject.hq in territories) {
+    setHq(saveObject.hq);
+  }
+  Object.entries(saveObject.tributes ?? {}).forEach(([resource, amount]) => {
+    if (resource in tributes) {
+      tributes[resource] = amount;
+      document.querySelector(`#${resource}Tributes`).value = amount;
+    }
   });
   localStorage.setItem('tributes', JSON.stringify(tributes));
   for (const territory of Object.values(territories)) {
@@ -550,6 +605,9 @@ function fromJSON(saveObject) {
   tooltips.sortTerritories();
   updateTotal();
   updateLocalStorage();
+  if (unknownTerritories.length > 0) {
+    alert(`These territories were skipped:\n${unknownTerritories.join('\n')}`);
+  }
 }
 
 document.querySelector('#share').addEventListener('click', () => {

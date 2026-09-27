@@ -1,11 +1,24 @@
 import upgradeData from '../data/upgrades.js';
 
+export function baseTreasuryFor(acquired) {
+  const hoursHeld = acquired === null ? 0 : (new Date() - new Date(acquired)) / 3600000;
+  if (hoursHeld >= 24 * 12) {
+    return 0.3;
+  } else if (hoursHeld >= 24 * 5) {
+    return 0.25;
+  } else if (hoursHeld >= 24) {
+    return 0.2;
+  } else if (hoursHeld >= 1) {
+    return 0.1;
+  }
+  return 0;
+}
+
 export class Territory {
-  constructor(name, connections, resources, acquired, hqDistance, baseTreasury) {
+  constructor(name, connections, resources, hqDistance, baseTreasury) {
     this.name = name;
     this.connections = connections;
     this.resources = resources;
-    this.acquired = acquired === null ? new Date() : new Date(acquired);
     this.distanceToHq = hqDistance;
     this.hqBonus = 1;
     this.costs = {};
@@ -28,22 +41,7 @@ export class Territory {
   }
 
   setBaseTreasury(value) {
-    if (value === null) {
-      const hoursHeld = (new Date() - this.acquired) / 3600000;
-      if (hoursHeld >= 24 * 12) {
-        this.baseTreasury = 0.3;
-      } else if (hoursHeld >= 24 * 5) {
-        this.baseTreasury = 0.25;
-      } else if (hoursHeld >= 24) {
-        this.baseTreasury = 0.2;
-      } else if (hoursHeld >= 1) {
-        this.baseTreasury = 0.1;
-      } else {
-        this.baseTreasury = 0;
-      }
-    } else {
-      this.baseTreasury = value;
-    }
+    this.baseTreasury = value;
     this.updateTreasury();
   }
 
