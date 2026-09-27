@@ -9,14 +9,16 @@ const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfb
 let apiData;
 const guilds = [];
 try {
-  const response = await fetch('https://athena.wynntils.com/cache/get/territoryList');
+  const response = await fetch('https://wynnmap.zatzou.com/api/v3/terr/state');
   if (!response.ok) {
     throw new Error(`Response status: ${response.status}`);
   }
 
-  apiData = (await response.json())['territories'];
-  Object.values(apiData)
-    .forEach(territory => guilds.push(`${territory['guild']} [${territory['guildPrefix']}]`));
+  apiData = (await response.json())['terrs'];
+  const guildNames = Object.values(apiData)
+      .filter(territory => territory['guild']['uuid'] !== null)
+      .map(territory => `${territory['guild']['name']} [${territory['guild']['prefix']}]`);
+  guilds.push(...new Set(guildNames));
   guilds.sort();
 } catch (error) {
   document.querySelector('#loadTerritories').disabled = true;
@@ -47,10 +49,12 @@ if (urlParams.has('id')) {
 }
 
 createInputMenu('#loadTerritories', '#loadTerritoriesResults', guilds, guild => {
-  const guildPrefix = guild.split('[')[1].split(']')[0];
-  const territoryNames = Object.values(apiData)
-      .filter(territory => territory['guildPrefix'] + '' === guildPrefix && !(territory['territory'] in territories))
-      .map(territory => territory['territory']);
+  const guildPrefix = guild.split('[').at(-1).split(']')[0];
+  const territoryNames = Object.entries(apiData)
+      .filter(([name, territory]) => territory['guild']['prefix'] === guildPrefix && name in territoryData &&
+          !(name in territories))
+      .sort(([, first], [, second]) => second['hq'] - first['hq'])
+      .map(([name]) => name);
   addTerritories(territoryNames);
   return `Added ${territoryNames.length}!`;
 });
