@@ -1,5 +1,5 @@
 import territoryData from '../data/territories.json' with {type: 'json'};
-import mapImages from '../data/mapImages.json' with {type: 'json'};
+import mapImages from '../data/map-images.json' with {type: 'json'};
 import * as tooltips from './tooltips.js';
 
 // In-game coordinates (x, z) are mapped to Leaflet's simple CRS as [lat, lng] = [-z, x], i.e. 1 block = 1 px at zoom 0
