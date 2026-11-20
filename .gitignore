@@ -1,0 +1,20 @@
+# IDEs / editors
+.idea/
+.vscode/
+*.iml
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependencies, builds and logs
+node_modules/
+dist/
+*.log
+
+# Local environment
+.env
+.env.*
