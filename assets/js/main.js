@@ -484,6 +484,7 @@ function toggleSelected(territoryName) {
 
 function clearSelection() {
   selection.clear();
+  map.clearPicked();
   renderSelection();
 }
 

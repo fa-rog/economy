@@ -568,8 +568,7 @@ body.map-mode #cards .total.collapsed > :not(h4) {
   width: 8px;
 }
 
-#map .map-legend p:first-child .swatch:first-child,
-#map .map-legend p:nth-child(2) .swatch:first-child {
+#map .map-legend p > .swatch:first-child {
   margin-left: 0;
 }
 
@@ -606,6 +605,7 @@ body.map-mode #cards .total.collapsed > :not(h4) {
 }
 
 #map.zoom-far .territory-label > :not(.label-hq),
+#map.hide-labels .territory-label > :not(.label-hq),
 #map.zoom-mid .label-name,
 #map.zoom-mid .label-stats {
   display: none;
@@ -621,4 +621,53 @@ body.map-mode #cards .total.collapsed > :not(h4) {
 
 #map .label-icons img {
   display: block;
+}
+
+#map .map-modes {
+  display: grid;
+  font-size: 0.8rem;
+  gap: 6px 0;
+  grid-template-columns: 1fr 1fr;
+  opacity: 0.9;
+  padding: 8px;
+}
+
+#map .map-modes .mode-group {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+#map .map-modes button {
+  background-color: #333;
+  border: 1px solid #555;
+  color: #ddd;
+  cursor: pointer;
+  font: inherit;
+  padding: 3px 8px;
+}
+
+#map .map-modes button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+#map .map-modes button:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+#map .map-modes button:hover {
+  background-color: #555;
+}
+
+#map .map-modes button.current {
+  background-color: #67917f;
+  border-color: #67917f;
+  color: #1d1905;
+  font-weight: 700;
+}
+
+#map .map-legend .swatch.multihit {
+  border: 3px double #ddd;
+  height: 6px;
+  width: 6px;
 }

@@ -8,7 +8,14 @@ const overscroll = 0.75;
 const resourceColors = {'emeralds': '#5f5', 'ore': '#ddd', 'wood': '#fa0', 'fish': '#5ff', 'crops': '#ff5'};
 const selectedColor = '#f5f';
 const hqPathColor = '#fa0';
-const difficultyColors = {'Very Low': 'green', 'Low': 'green', 'Medium': 'yellow', 'High': 'red', 'Very High': 'red'};
+const difficultyColors = {
+  'Very Low': '#5f5', 'Low': '#0a0', 'Medium': '#ff5', 'High': '#f55', 'Very High': '#a00',
+};
+const difficultyLabelColors = {'Very Low': 'green', 'Low': 'green', 'Medium': 'yellow', 'High': 'red', 'Very High': 'red'};
+const unmanagedDefenceColor = '#777';
+const multihitInset = 4;
+const unmanagedRouteCost = 1000;
+const defaultModes = {display: 'resources', routes: 'fastest', territories: 'all', labels: 'shown'};
 
 let L;
 let map;
@@ -17,8 +24,14 @@ let callbacks;
 let initPromise = null;
 let refreshScheduled = false;
 let hovered = null;
+let pinned = null;
+let hqParents = {};
 let hqPath = new Set();
 let hoverTooltip;
+let legendElement;
+let modes = loadModes();
+const picked = new Set();
+let previouslySelected = new Set();
 const territoryLayers = {};
 const routesByTerritory = {};
 const routesByKey = new Map();
@@ -44,6 +57,31 @@ export function refresh() {
   });
 }
 
+export function clearPicked() {
+  picked.clear();
+  refresh();
+}
+
+function loadModes() {
+  try {
+    return {...defaultModes, ...JSON.parse(localStorage.getItem('mapModes'))};
+  } catch (error) {
+    return {...defaultModes};
+  }
+}
+
+function setMode(mode, value) {
+  modes[mode] = value;
+  try {
+    localStorage.setItem('mapModes', JSON.stringify(modes));
+  } catch (error) {
+    // Saving the view modes is not critical
+  }
+  updateModeControls();
+  updateLegend();
+  render();
+}
+
 async function createMap(element, mapCallbacks) {
   L = await import('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet-src.esm.js');
   container = element;
@@ -57,6 +95,7 @@ async function createMap(element, mapCallbacks) {
     maxBoundsViscosity: 1,
     maxZoom: 3,
     minZoom: -3,
+    zoomControl: false,
   });
   const limitCenter = map._limitCenter;
   map._limitCenter = (center, zoom, bounds) => limitCenter.call(map, center, zoom, bounds && boundsForZoom(zoom));
@@ -67,10 +106,18 @@ async function createMap(element, mapCallbacks) {
   createPatterns();
   createRoutes();
   createTerritories();
+  createModeControls();
+  L.control.zoom({position: 'bottomright'}).addTo(map);
   createLegend();
   createOverlays();
 
+  map.on('click', () => {
+    if (picked.size > 0) {
+      clearPicked();
+    }
+  });
   map.on('zoomend', updateZoomClass);
+  map.on('zoomend', updateMultihitBorderBounds);
   map.on('zoomend resize', updateMaxBounds);
   map.on('moveend', () => {
     try {
@@ -135,8 +182,16 @@ function patternId(colors) {
 }
 
 function fillOf(name) {
+  if (modes.display === 'defences') {
+    const territory = callbacks.getTerritory(name);
+    return territory ? difficultyColors[territory.difficulty] : unmanagedDefenceColor;
+  }
   const colors = colorsOf(name);
   return colors.length === 1 ? colors[0] : `url(#${patternId(colors)})`;
+}
+
+function isVisible(name) {
+  return modes.territories !== 'managed' || Boolean(callbacks.getTerritory(name));
 }
 
 function createPatterns() {
@@ -196,7 +251,7 @@ function createTerritories() {
   for (const [name, data] of Object.entries(territoryData)) {
     const rectangle = L.rectangle(toBounds(data.location), {fillColor: fillOf(name)}).addTo(map);
     const label = L.marker(centerOf(name), {interactive: false, keyboard: false}).addTo(map);
-    territoryLayers[name] = {rectangle, label, labelHtml: null};
+    territoryLayers[name] = {rectangle, label, labelHtml: null, multihitBorder: null};
 
     rectangle.on('mouseover', event => {
       setHovered(name);
@@ -207,38 +262,105 @@ function createTerritories() {
       setHovered(null);
       hoverTooltip.hidden = true;
     });
-    rectangle.on('click', () => {
+    rectangle.on('click', event => {
+      L.DomEvent.stopPropagation(event);
       if (callbacks.getTerritory(name)) {
         callbacks.onToggleSelect(name);
       } else {
+        const wasPicked = picked.has(name);
+        picked.clear();
+        if (!wasPicked) {
+          picked.add(name);
+        }
+        render();
+      }
+    });
+    rectangle.on('dblclick', event => {
+      L.DomEvent.stopPropagation(event);
+      if (callbacks.getTerritory(name)) {
+        callbacks.onEdit(name);
+      } else {
+        picked.delete(name);
         callbacks.onAdd(name);
       }
     });
-    rectangle.on('dblclick', () => {
-      if (callbacks.getTerritory(name)) {
-        callbacks.onEdit(name);
+  }
+}
+
+function createModeControls() {
+  const control = L.control({position: 'topleft'});
+  control.onAdd = () => {
+    const element = L.DomUtil.create('div', 'tooltip map-modes');
+    element.innerHTML = `
+      <div class="mode-group" data-mode="display" title="Territory coloring">
+        <button data-value="resources">Resources</button><button data-value="defences">Defences</button>
+      </div>
+      <div class="mode-group" data-mode="routes" title="Route to HQ">
+        <button data-value="fastest" title="Fewest territories">Fastest</button><button data-value="cheapest"
+          title="Fewest territories outside the claim">Cheapest</button>
+      </div>
+      <div class="mode-group" data-mode="labels" title="Territory labels">
+        <button data-value="shown">Labels</button><button data-value="hidden">Clean</button>
+      </div>
+      <div class="mode-group" data-mode="territories" title="Shown territories">
+        <button data-value="all">All</button><button data-value="managed">Managed</button>
+      </div>`;
+    for (const group of element.querySelectorAll('.mode-group')) {
+      for (const button of group.querySelectorAll('button')) {
+        button.addEventListener('click', () => setMode(group.dataset.mode, button.dataset.value));
       }
-    });
+    }
+    L.DomEvent.disableClickPropagation(element);
+    L.DomEvent.disableScrollPropagation(element);
+    return element;
+  };
+  control.addTo(map);
+  updateModeControls();
+}
+
+function updateModeControls() {
+  container.classList.toggle('hide-labels', modes.labels === 'hidden');
+  for (const group of container.querySelectorAll('.map-modes .mode-group')) {
+    for (const button of group.querySelectorAll('button')) {
+      button.classList.toggle('current', modes[group.dataset.mode] === button.dataset.value);
+    }
   }
 }
 
 function createLegend() {
   const legend = L.control({position: 'bottomleft'});
   legend.onAdd = () => {
-    const element = L.DomUtil.create('div', 'tooltip map-legend');
-    const resourceLines = ['emeralds', 'ore', 'wood', 'fish', 'crops'].map(resource => {
+    legendElement = L.DomUtil.create('div', 'tooltip map-legend');
+    L.DomEvent.disableClickPropagation(legendElement);
+    updateLegend();
+    return legendElement;
+  };
+  legend.addTo(map);
+}
+
+function updateLegend() {
+  if (legendElement === undefined) {
+    return;
+  }
+  let colorLines;
+  if (modes.display === 'defences') {
+    const difficultyLine = Object.entries(difficultyColors)
+        .map(([difficulty, color]) => `<span class="swatch" style="background-color: ${color}"></span>${difficulty}`);
+    colorLines = `<p>${difficultyLine.join(' ')}</p>`;
+  } else {
+    const resourceLine = ['emeralds', 'ore', 'wood', 'fish', 'crops'].map(resource => {
       const label = resource === 'emeralds' ? 'City' : resource.charAt(0).toUpperCase() + resource.slice(1);
       return `<span class="swatch" style="background-color: ${resourceColors[resource]}"></span>${label}`;
     });
-    element.innerHTML = `<p>${resourceLines.join(' ')}</p>
-      <p><span class="swatch outline" style="border-color: ${selectedColor}"></span>Selected
-        <span class="label-hq">♛</span> HQ
-        <span class="swatch" style="background-color: ${hqPathColor}; height: 3px"></span>Fastest route to HQ</p>
-      <p class="gray">Click: add / select, double-click: edit</p>`;
-    L.DomEvent.disableClickPropagation(element);
-    return element;
-  };
-  legend.addTo(map);
+    colorLines = `<p>${resourceLine.join(' ')}</p>`;
+  }
+  const routeLabel = modes.routes === 'cheapest' ? 'Cheapest route to HQ' : 'Fastest route to HQ';
+  const multiLegend = modes.display === 'defences' ? '<span class="swatch multihit"></span>Multi' : '';
+  legendElement.innerHTML = `${colorLines}
+    <p><span class="swatch outline" style="border-color: ${selectedColor}"></span>Selected
+      <span class="label-hq">♛</span> HQ
+      <span class="swatch" style="background-color: ${hqPathColor}; height: 3px"></span>${routeLabel}${multiLegend}</p>
+    <p class="gray">Click: select, double-click: add / edit</p>`;
 }
 
 function createOverlays() {
@@ -256,7 +378,24 @@ function updateZoomClass() {
 }
 
 function render() {
-  hqPath = new Set(hovered === null ? [] : findHqPath(hovered));
+  for (const name of picked) {
+    if (callbacks.getTerritory(name) || !isVisible(name)) {
+      picked.delete(name);
+    }
+  }
+  if (hovered !== null && !isVisible(hovered)) {
+    hovered = null;
+    hoverTooltip.hidden = true;
+  }
+  const selected = new Set(Object.keys(territoryData).filter(name => callbacks.isSelected(name)));
+  if ([...selected].some(name => !previouslySelected.has(name))) {
+    picked.clear();
+  }
+  previouslySelected = selected;
+  const chosen = [...selected, ...picked];
+  pinned = chosen.length === 1 ? chosen[0] : null;
+  hqParents = computeHqParents();
+  hqPath = computeHqPath();
   for (const name of Object.keys(territoryLayers)) {
     styleTerritory(name);
     updateLabel(name);
@@ -268,19 +407,60 @@ function render() {
 
 function styleTerritory(name) {
   const territory = callbacks.getTerritory(name);
+  const layers = territoryLayers[name];
+  const visible = isVisible(name);
+  if (visible !== map.hasLayer(layers.rectangle)) {
+    for (const layer of [layers.rectangle, layers.label]) {
+      if (visible) {
+        layer.addTo(map);
+      } else {
+        layer.remove();
+      }
+    }
+  }
   const color = fillOf(name);
   const style = territory ?
-      {color: color, dashArray: null, fillOpacity: 0.5, opacity: 1, weight: 2} :
-      {color: color, dashArray: '4 4', fillOpacity: 0.3, opacity: 0.8, weight: 1};
-  if (callbacks.isSelected(name)) {
+      {color: color, dashArray: null, fillColor: color, fillOpacity: 0.5, opacity: 1, weight: 2} :
+      {color: color, dashArray: '4 4', fillColor: color, fillOpacity: 0.3, opacity: 0.8, weight: 1};
+  if (callbacks.isSelected(name) || picked.has(name)) {
     Object.assign(style, {color: selectedColor, fillOpacity: 0.7, weight: 3});
   }
   if (name === hovered) {
     style.fillOpacity += 0.2;
   }
-  territoryLayers[name].rectangle.setStyle(style);
+  layers.rectangle.setStyle(style);
+  updateMultihitBorder(name, visible, style.color);
   for (const route of routesByTerritory[name]) {
     styleRoute(route);
+  }
+}
+
+function updateMultihitBorder(name, visible, color) {
+  const territory = callbacks.getTerritory(name);
+  const layers = territoryLayers[name];
+  const shown = visible && modes.display === 'defences' && territory && territory.upgrades.multi > 0;
+  if (!shown) {
+    layers.multihitBorder?.remove();
+    layers.multihitBorder = null;
+    return;
+  }
+  layers.multihitBorder ??= L.rectangle(multihitBorderBounds(name), {fill: false, interactive: false, weight: 2})
+      .addTo(map);
+  layers.multihitBorder.setStyle({color: color});
+}
+
+function multihitBorderBounds(name) {
+  const {start, end} = territoryData[name].location;
+  const size = Math.min(Math.abs(end[0] - start[0]), Math.abs(end[1] - start[1]));
+  const inset = Math.min(multihitInset / map.getZoomScale(map.getZoom(), 0), size / 4);
+  const [x1, x2] = [start[0], end[0]].sort((a, b) => a - b);
+  const [z1, z2] = [start[1], end[1]].sort((a, b) => a - b);
+  return [[-(z1 + inset), x1 + inset], [-(z2 - inset), x2 - inset]];
+}
+
+function updateMultihitBorderBounds() {
+  for (const [name, layers] of Object.entries(territoryLayers)) {
+    layers.multihitBorder?.setBounds(multihitBorderBounds(name));
   }
 }
 
@@ -288,7 +468,7 @@ function setHovered(name) {
   const previous = hovered;
   const previousPath = hqPath;
   hovered = name;
-  hqPath = new Set(name === null ? [] : findHqPath(name));
+  hqPath = computeHqPath();
   if (previous !== null) {
     styleTerritory(previous);
   }
@@ -304,25 +484,61 @@ function routeKey(from, to) {
   return [from, to].sort().join('|');
 }
 
-function findHqPath(name) {
+function computeHqParents() {
   const hq = callbacks.getHq();
-  if (hq === null || hq === name) {
-    return [];
+  if (hq === null || !(hq in territoryData)) {
+    return {};
   }
   const parents = {[hq]: null};
-  const queue = [hq];
-  while (queue.length > 0 && !(name in parents)) {
-    const current = queue.shift();
+  if (modes.routes !== 'cheapest') {
+    const queue = [hq];
+    for (let i = 0; i < queue.length; i++) {
+      for (const connection of territoryData[queue[i]].connections) {
+        if (connection in territoryData && !(connection in parents)) {
+          parents[connection] = queue[i];
+          queue.push(connection);
+        }
+      }
+    }
+    return parents;
+  }
+  const costs = {[hq]: 0};
+  const done = new Set();
+  for (;;) {
+    let current = null;
+    for (const [name, cost] of Object.entries(costs)) {
+      if (!done.has(name) && (current === null || cost < costs[current])) {
+        current = name;
+      }
+    }
+    if (current === null) {
+      return parents;
+    }
+    done.add(current);
     for (const connection of territoryData[current].connections) {
-      if (connection in territoryData && !(connection in parents)) {
+      if (!(connection in territoryData) || done.has(connection)) {
+        continue;
+      }
+      const cost = costs[current] + 1 + (callbacks.getTerritory(connection) ? 0 : unmanagedRouteCost);
+      if (!(connection in costs) || cost < costs[connection]) {
+        costs[connection] = cost;
         parents[connection] = current;
-        queue.push(connection);
       }
     }
   }
+}
+
+function computeHqPath() {
+  return new Set([...findHqPath(hovered), ...findHqPath(pinned)]);
+}
+
+function findHqPath(name) {
   const path = [];
-  for (let current = name; current in parents && parents[current] !== null; current = parents[current]) {
-    path.push(routesByKey.get(routeKey(current, parents[current])));
+  if (name === null) {
+    return path;
+  }
+  for (let current = name; current in hqParents && hqParents[current] !== null; current = hqParents[current]) {
+    path.push(routesByKey.get(routeKey(current, hqParents[current])));
   }
   return path;
 }
@@ -331,6 +547,8 @@ function styleRoute(route) {
   const endpoints = [route.from, route.to];
   if (hqPath.has(route)) {
     route.line.setStyle({color: hqPathColor, opacity: 1, weight: 3});
+  } else if (!endpoints.every(isVisible)) {
+    route.line.setStyle({opacity: 0});
   } else if (endpoints.includes(hovered)) {
     route.line.setStyle({color: 'white', opacity: 1, weight: 2});
   } else if (endpoints.every(name => callbacks.getTerritory(name))) {
@@ -344,23 +562,36 @@ function escapeHtml(text) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function resourceIcons(name) {
+  const resources = territoryData[name].resources;
+  const icons = [];
+  if (resources.emeralds > 9000) {
+    icons.push('<span class="green">✦</span>');
+  }
+  for (const resource of ['ore', 'wood', 'fish', 'crops']) {
+    const count = resources[resource] >= 7200 ? 2 : resources[resource] > 0 ? 1 : 0;
+    for (let i = 0; i < count; i++) {
+      icons.push(`<img alt="" src="assets/img/resources/${resource}.png">`);
+    }
+  }
+  return icons;
+}
+
 function updateLabel(name) {
   const territory = callbacks.getTerritory(name);
-  const resources = territoryData[name].resources;
-  const icons = ['ore', 'wood', 'fish', 'crops'].filter(resource => resources[resource] > 0)
-      .map(resource => `<img alt="" src="assets/img/resources/${resource}.png">`);
-  if (resources.emeralds > 9000) {
-    icons.unshift('<span class="green">✦</span>');
-  }
-  let html = `<div class="label-icons">${icons.join('')}</div><div class="label-name">${escapeHtml(name)}</div>`;
+  const icons = resourceIcons(name);
+  let html = icons.length > 0 ? `<div class="label-icons">${icons.join('')}</div>` : '';
+  html += `<div class="label-name">${escapeHtml(name)}</div>`;
   if (territory) {
     const difficulty = territory.difficulty;
-    html += `<div class="label-stats ${difficultyColors[difficulty]}">${difficulty}</div>`;
+    const multihit = territory.upgrades.multi > 0 ? ' ⚔' : '';
+    html += `<div class="label-stats ${difficultyLabelColors[difficulty]}">${difficulty}${multihit}</div>`;
   }
   if (name === callbacks.getHq()) {
     html = `<div class="label-hq">♛</div>` + html;
   }
-  const classes = ['territory-label', territory ? 'managed' : '', callbacks.isSelected(name) ? 'selected' : ''];
+  const selected = callbacks.isSelected(name) || picked.has(name);
+  const classes = ['territory-label', territory ? 'managed' : '', selected ? 'selected' : ''];
   html = `<div class="${classes.join(' ')}">${html}</div>`;
   const layers = territoryLayers[name];
   if (layers.labelHtml !== html) {
@@ -378,7 +609,7 @@ function renderHoverContent(name) {
   }
   const hint = document.createElement('p');
   hint.className = 'dark-gray';
-  hint.innerText = territory ? 'Click to select, double-click to edit' : 'Click to add';
+  hint.innerText = territory ? 'Click to select, double-click to edit' : 'Click to select, double-click to add';
   hoverTooltip.append(document.createElement('br'), hint);
 }
 
