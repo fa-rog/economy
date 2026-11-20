@@ -66,9 +66,9 @@ export function clearPicked() {
 
 function loadModes() {
   try {
-    return {...defaultModes, ...JSON.parse(localStorage.getItem('mapModes'))};
+    return {...DEFAULT_MODES, ...JSON.parse(localStorage.getItem('mapModes'))};
   } catch (error) {
-    return {...defaultModes};
+    return {...DEFAULT_MODES};
   }
 }
 
