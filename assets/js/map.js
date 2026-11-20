@@ -14,7 +14,7 @@ const DIFFICULTY_COLORS = {
 const DIFFICULTY_LABEL_COLORS = {
   'Very Low': 'green', 'Low': 'green', 'Medium': 'yellow', 'High': 'red', 'Very High': 'red',
 };
-const UNMANAGED_DEFENCE_COLOR = '#777';
+const UNMANAGED_DEFENCE_COLOR = '#ddd';
 const MULTIHIT_INSET = 4;
 const UNMANAGED_ROUTE_COST = 1000;
 const DEFAULT_MODES = {display: 'resources', routes: 'fastest', territories: 'all', labels: 'shown'};
