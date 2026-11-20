@@ -1,4 +1,4 @@
-export default {
+{
     "Abandoned Farm": {
         "connections": ["Pigmen Ravines", "Time Valley"],
         "location": {"start": [-577, -1395], "end": [-478, -1335]},

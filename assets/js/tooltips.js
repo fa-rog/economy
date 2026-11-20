@@ -1,4 +1,4 @@
-import upgradeData from '../data/upgrades.js';
+import upgradeData from '../data/upgrades.json' with {type: 'json'};
 
 const COLORS = {
   'emeralds': 'green',

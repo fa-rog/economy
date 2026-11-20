@@ -1,4 +1,4 @@
-import upgradeData from '../data/upgrades.js';
+import upgradeData from '../data/upgrades.json' with {type: 'json'};
 
 export function baseTreasuryFor(acquired) {
   const hoursHeld = acquired === null ? 0 : (new Date() - new Date(acquired)) / 3600000;

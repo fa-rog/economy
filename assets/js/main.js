@@ -1,5 +1,5 @@
-import territoryData from '../data/territories.js';
-import upgradeData from '../data/upgrades.js';
+import territoryData from '../data/territories.json' with {type: 'json'};
+import upgradeData from '../data/upgrades.json' with {type: 'json'};
 import {baseTreasuryFor, Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 import * as map from './map.js';
