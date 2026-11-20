@@ -4,7 +4,7 @@ import {baseTreasuryFor, Territory} from './territory.js';
 import * as tooltips from './tooltips.js';
 import * as map from './map.js';
 
-const shareUrl = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfbWGLN_F97T7VWs9rSgHnozfHQOb2SUrM1qxzj7iSHuIST_/exec';
+const SHARE_URL = 'https://script.google.com/macros/s/AKfycbxChZAQ2rNlbmSXK2JONfbWGLN_F97T7VWs9rSgHnozfHQOb2SUrM1qxzj7iSHuIST_/exec';
 
 let apiData = {};
 const guilds = [];
@@ -40,7 +40,7 @@ const selection = new Set();
 
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('id')) {
-  fetch(`${shareUrl}?id=${urlParams.get('id')}`)
+  fetch(`${SHARE_URL}?id=${urlParams.get('id')}`)
     .then(response => response.json())
     .then(data => {
       if (data !== null && (!hasSavedTerritories() ||
@@ -612,7 +612,7 @@ function fromJSON(saveObject) {
 }
 
 document.querySelector('#share').addEventListener('click', () => {
-  fetch(shareUrl, {
+  fetch(SHARE_URL, {
     body: JSON.stringify(toJSON()), headers: {'Content-Type': 'text/plain'}, method: 'POST',
   })
       .then(response => response.json())

@@ -3,19 +3,21 @@ import mapImages from '../data/mapImages.js';
 import * as tooltips from './tooltips.js';
 
 // In-game coordinates (x, z) are mapped to Leaflet's simple CRS as [lat, lng] = [-z, x], i.e. 1 block = 1 px at zoom 0
-const worldBounds = [[1, -2560], [6912, 2048]];
-const overscroll = 0.75;
-const resourceColors = {'emeralds': '#5f5', 'ore': '#ddd', 'wood': '#fa0', 'fish': '#5ff', 'crops': '#ff5'};
-const selectedColor = '#f5f';
-const hqPathColor = '#fa0';
-const difficultyColors = {
+const WORLD_BOUNDS = [[1, -2560], [6912, 2048]];
+const OVERSCROLL = 0.75;
+const RESOURCE_COLORS = {'emeralds': '#5f5', 'ore': '#ddd', 'wood': '#fa0', 'fish': '#5ff', 'crops': '#ff5'};
+const SELECTED_COLOR = '#f5f';
+const HQ_PATH_COLOR = '#fa0';
+const DIFFICULTY_COLORS = {
   'Very Low': '#5f5', 'Low': '#0a0', 'Medium': '#ff5', 'High': '#f55', 'Very High': '#a00',
 };
-const difficultyLabelColors = {'Very Low': 'green', 'Low': 'green', 'Medium': 'yellow', 'High': 'red', 'Very High': 'red'};
-const unmanagedDefenceColor = '#777';
-const multihitInset = 4;
-const unmanagedRouteCost = 1000;
-const defaultModes = {display: 'resources', routes: 'fastest', territories: 'all', labels: 'shown'};
+const DIFFICULTY_LABEL_COLORS = {
+  'Very Low': 'green', 'Low': 'green', 'Medium': 'yellow', 'High': 'red', 'Very High': 'red',
+};
+const UNMANAGED_DEFENCE_COLOR = '#777';
+const MULTIHIT_INSET = 4;
+const UNMANAGED_ROUTE_COST = 1000;
+const DEFAULT_MODES = {display: 'resources', routes: 'fastest', territories: 'all', labels: 'shown'};
 
 let L;
 let map;
@@ -91,7 +93,7 @@ async function createMap(element, mapCallbacks) {
     boxZoom: false,
     crs: L.CRS.Simple,
     doubleClickZoom: false,
-    maxBounds: worldBounds,
+    maxBounds: WORLD_BOUNDS,
     maxBoundsViscosity: 1,
     maxZoom: 3,
     minZoom: -3,
@@ -149,9 +151,9 @@ function restoreView() {
 }
 
 function boundsForZoom(zoom) {
-  const margin = map.getSize().multiplyBy(overscroll / map.getZoomScale(zoom, 0));
-  return L.latLngBounds([worldBounds[0][0] - margin.y, worldBounds[0][1] - margin.x],
-      [worldBounds[1][0] + margin.y, worldBounds[1][1] + margin.x]);
+  const margin = map.getSize().multiplyBy(OVERSCROLL / map.getZoomScale(zoom, 0));
+  return L.latLngBounds([WORLD_BOUNDS[0][0] - margin.y, WORLD_BOUNDS[0][1] - margin.x],
+      [WORLD_BOUNDS[1][0] + margin.y, WORLD_BOUNDS[1][1] + margin.x]);
 }
 
 function updateMaxBounds() {
@@ -170,9 +172,9 @@ function centerOf(name) {
 function colorsOf(name) {
   const resources = territoryData[name].resources;
   const colors = ['ore', 'wood', 'fish', 'crops'].filter(resource => resources[resource] > 0)
-      .map(resource => resourceColors[resource]);
+      .map(resource => RESOURCE_COLORS[resource]);
   if (resources.emeralds > 9000 || colors.length === 0) {
-    colors.unshift(resourceColors.emeralds);
+    colors.unshift(RESOURCE_COLORS.emeralds);
   }
   return colors;
 }
@@ -184,7 +186,7 @@ function patternId(colors) {
 function fillOf(name) {
   if (modes.display === 'defences') {
     const territory = callbacks.getTerritory(name);
-    return territory ? difficultyColors[territory.difficulty] : unmanagedDefenceColor;
+    return territory ? DIFFICULTY_COLORS[territory.difficulty] : UNMANAGED_DEFENCE_COLOR;
   }
   const colors = colorsOf(name);
   return colors.length === 1 ? colors[0] : `url(#${patternId(colors)})`;
@@ -344,22 +346,23 @@ function updateLegend() {
   }
   let colorLines;
   if (modes.display === 'defences') {
-    const difficultyLine = Object.entries(difficultyColors)
+    const difficultyLine = Object.entries(DIFFICULTY_COLORS)
         .map(([difficulty, color]) => `<span class="swatch" style="background-color: ${color}"></span>${difficulty}`);
     colorLines = `<p>${difficultyLine.join(' ')}</p>`;
   } else {
     const resourceLine = ['emeralds', 'ore', 'wood', 'fish', 'crops'].map(resource => {
       const label = resource === 'emeralds' ? 'City' : resource.charAt(0).toUpperCase() + resource.slice(1);
-      return `<span class="swatch" style="background-color: ${resourceColors[resource]}"></span>${label}`;
+      return `<span class="swatch" style="background-color: ${RESOURCE_COLORS[resource]}"></span>${label}`;
     });
     colorLines = `<p>${resourceLine.join(' ')}</p>`;
   }
   const routeLabel = modes.routes === 'cheapest' ? 'Cheapest route to HQ' : 'Fastest route to HQ';
   const multiLegend = modes.display === 'defences' ? '<span class="swatch multihit"></span>Multi' : '';
   legendElement.innerHTML = `${colorLines}
-    <p><span class="swatch outline" style="border-color: ${selectedColor}"></span>Selected
+    <p><span class="swatch outline" style="border-color: ${SELECTED_COLOR}"></span>Selected
       <span class="label-hq">♛</span> HQ
-      <span class="swatch" style="background-color: ${hqPathColor}; height: 3px"></span>${routeLabel}${multiLegend}</p>
+      <span class="swatch" style="background-color: ${HQ_PATH_COLOR}; height: 3px"></span>${routeLabel}
+      ${multiLegend}</p>
     <p class="gray">Click: select, double-click: add / edit</p>`;
 }
 
@@ -423,7 +426,7 @@ function styleTerritory(name) {
       {color: color, dashArray: null, fillColor: color, fillOpacity: 0.5, opacity: 1, weight: 2} :
       {color: color, dashArray: '4 4', fillColor: color, fillOpacity: 0.3, opacity: 0.8, weight: 1};
   if (callbacks.isSelected(name) || picked.has(name)) {
-    Object.assign(style, {color: selectedColor, fillOpacity: 0.7, weight: 3});
+    Object.assign(style, {color: SELECTED_COLOR, fillOpacity: 0.7, weight: 3});
   }
   if (name === hovered) {
     style.fillOpacity += 0.2;
@@ -452,7 +455,7 @@ function updateMultihitBorder(name, visible, color) {
 function multihitBorderBounds(name) {
   const {start, end} = territoryData[name].location;
   const size = Math.min(Math.abs(end[0] - start[0]), Math.abs(end[1] - start[1]));
-  const inset = Math.min(multihitInset / map.getZoomScale(map.getZoom(), 0), size / 4);
+  const inset = Math.min(MULTIHIT_INSET / map.getZoomScale(map.getZoom(), 0), size / 4);
   const [x1, x2] = [start[0], end[0]].sort((a, b) => a - b);
   const [z1, z2] = [start[1], end[1]].sort((a, b) => a - b);
   return [[-(z1 + inset), x1 + inset], [-(z2 - inset), x2 - inset]];
@@ -519,7 +522,7 @@ function computeHqParents() {
       if (!(connection in territoryData) || done.has(connection)) {
         continue;
       }
-      const cost = costs[current] + 1 + (callbacks.getTerritory(connection) ? 0 : unmanagedRouteCost);
+      const cost = costs[current] + 1 + (callbacks.getTerritory(connection) ? 0 : UNMANAGED_ROUTE_COST);
       if (!(connection in costs) || cost < costs[connection]) {
         costs[connection] = cost;
         parents[connection] = current;
@@ -546,7 +549,7 @@ function findHqPath(name) {
 function styleRoute(route) {
   const endpoints = [route.from, route.to];
   if (hqPath.has(route)) {
-    route.line.setStyle({color: hqPathColor, opacity: 1, weight: 3});
+    route.line.setStyle({color: HQ_PATH_COLOR, opacity: 1, weight: 3});
   } else if (!endpoints.every(isVisible)) {
     route.line.setStyle({opacity: 0});
   } else if (endpoints.includes(hovered)) {
@@ -585,7 +588,7 @@ function updateLabel(name) {
   if (territory) {
     const difficulty = territory.difficulty;
     const multihit = territory.upgrades.multi > 0 ? ' ⚔' : '';
-    html += `<div class="label-stats ${difficultyLabelColors[difficulty]}">${difficulty}${multihit}</div>`;
+    html += `<div class="label-stats ${DIFFICULTY_LABEL_COLORS[difficulty]}">${difficulty}${multihit}</div>`;
   }
   if (name === callbacks.getHq()) {
     html = `<div class="label-hq">♛</div>` + html;

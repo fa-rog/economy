@@ -1,6 +1,6 @@
 import upgradeData from '../data/upgrades.js';
 
-const colors = {
+const COLORS = {
   'emeralds': 'green',
   'ore': 'white',
   'wood': 'gold',
@@ -13,7 +13,7 @@ const colors = {
   'Very High': 'red',
 };
 const cardsElement = document.querySelector('#cards');
-const resources = ['emeralds', 'ore', 'wood', 'fish', 'crops'];
+const RESOURCES = ['emeralds', 'ore', 'wood', 'fish', 'crops'];
 
 export function init() {
   const tooltip = document.createElement('div');
@@ -48,8 +48,8 @@ export function updateTotal(territories, tributes) {
 
 function updateTotalProduction(territories, tributes) {
   const lines = [];
-  for (const resource of resources) {
-    const color = colors[resource];
+  for (const resource of RESOURCES) {
+    const color = COLORS[resource];
     const production = Object.values(territories)
         .reduce((sum, terr) => sum + terr.production[resource],
             tributes[resource] > 0 ? tributes[resource] : 0);
@@ -67,7 +67,7 @@ function updateTotalProduction(territories, tributes) {
 
 function updateTotalCosts(territories, tributes) {
   const lines = [];
-  for (const resource of resources) {
+  for (const resource of RESOURCES) {
     const cost = Object.values(territories)
         .reduce((sum, terr) => sum + terr.costs[resource],
             tributes[resource] < 0 ? -tributes[resource] : 0);
@@ -123,7 +123,7 @@ export function renderBaseTerritoryDetails(name, data, hqDistance, element) {
   for (const [resource, production] of Object.entries(data.resources)) {
     if (production > 0) {
       const line = createResourceImageLine(resource);
-      line.appendChild(createSpan(`+${production} ${capitalize(resource)} per Hour`, colors[resource]));
+      line.appendChild(createSpan(`+${production} ${capitalize(resource)} per Hour`, COLORS[resource]));
       lines.push(line);
     }
   }
@@ -202,7 +202,7 @@ export function updateTerritory(territory, root = cardOf(territory.name)) {
 export function updateTerritoryProduction(territory, root = cardOf(territory.name)) {
   const lines = [];
   for (const [resource, production] of Object.entries(territory.production)) {
-    const color = colors[resource];
+    const color = COLORS[resource];
     if (production > 0) {
       const line = createResourceImageLine(resource);
       line.appendChild(createSpan(`+${round(production)} ${capitalize(resource)} per Hour`, color));
@@ -269,7 +269,7 @@ export function updateTerritoryStats(territory, root = cardOf(territory.name)) {
   const difficulty = territory.difficulty;
   const heading = document.createElement('p');
   heading.appendChild(createSpan('Total Stats (', 'light-purple'));
-  heading.appendChild(createSpan(difficulty, colors[difficulty]));
+  heading.appendChild(createSpan(difficulty, COLORS[difficulty]));
   heading.appendChild(createSpan('):', 'light-purple'));
   lines.push(heading);
   let upgradeFactor = territory.connectionBonus * territory.hqBonus;

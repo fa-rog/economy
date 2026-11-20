@@ -77,5 +77,5 @@ export class Territory {
 
   toString() {
     return this.name;
-  };
+  }
 }
